@@ -1,0 +1,9 @@
+# Entorno local (se crea depuis .env.example)
+.env
+
+# Volcados del workspace
+workspace/*
+!workspace/.gitkeep
+
+# macOS
+.DS_Store

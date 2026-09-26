@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Ejecuta un comando dentro de la sesión gráfica (Wayland/X11/bus de sesión).
+# Uso: dev <comando> [args...]   ->   dev helium / dev gnome-terminal / dev cargo tauri dev
+set -euo pipefail
+
+ENV_FILE="/run/user/$(id -u)/desktop-env"
+
+if [ -r "${ENV_FILE}" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "${ENV_FILE}"
+  set +a
+fi
+
+exec "$@"
