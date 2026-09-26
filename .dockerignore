@@ -1,7 +1,9 @@
 .git
+.github
 .gitignore
 .env
-*.md
+**/*.md
+LICENSE
 Makefile
 docker-compose.yml
 workspace/

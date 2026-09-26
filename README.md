@@ -1,20 +1,105 @@
-# Ubuntu Desktop (GNOME 50 / Wayland) en Docker — arm64
+# Ubuntu ARM Docker — GNOME 50 Desktop in a Container
 
-Escritorio **Ubuntu 26.04 LTS** ("Resolute Raccoon") con **GNOME Shell 50** completo
-dentro de un contenedor Docker, accesible desde el navegador (noVNC) o con cualquier
-cliente VNC, y con **acceso SSH completo**.
+[![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue?logo=linux&logoColor=white)](#requirements)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/26.04/)
+[![GNOME](https://img.shields.io/badge/GNOME-50-4A86CF?logo=gnome&logoColor=white)](https://release.gnome.org/50/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-- GNOME Shell 50 en modo headless (Wayland) con **Ubuntu Dock**, panel, apps GNOME e
-  iconos de escritorio.
-- VNC servido por **GNOME Remote Desktop 50.2 compilado con backend VNC** (Ubuntu solo
-  empaqueta RDP). Contraseña: `admin`.
-- **noVNC** (novnc + websockify) para acceso desde el navegador.
-- Navegador por defecto: **Helium** (sin Firefox/snap).
-- Toolchain para **Tauri v2**: Rust (rustup), Node.js 24 LTS, **pnpm**, **yarn**,
-  `@tauri-apps/cli`, `create-tauri-app` y WebKitGTK 4.1.
-- Render por software (Mesa llvmpipe): no requiere GPU.
+> A complete, production-grade **Ubuntu 26.04 LTS (Resolute Raccoon)** desktop with
+> **GNOME Shell 50 (Wayland)** running inside Docker on **arm64**, reachable from a
+> browser (**noVNC**), any **VNC** client, or **SSH** — with the **Helium** browser and a
+> ready-to-use **Tauri v2** toolchain.
 
-## Puesta en marcha (1 comando)
+**English** · [Español](README.es.md)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Access](#access)
+- [Architecture](#architecture)
+- [Configuration](#configuration)
+- [Make Targets](#make-targets)
+- [Development Workflow (Tauri v2)](#development-workflow-tauri-v2)
+- [Data & Persistence](#data--persistence)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+---
+
+## Overview
+
+This project packages a full GNOME desktop into a single Docker image for arm64 hosts
+(Apple Silicon, ARM servers, and other `linux/arm64` machines). It was designed for
+developers who want a clean, disposable Linux desktop for building and testing
+**Tauri v2** applications, browsing with **Helium**, or simply experimenting with
+**Ubuntu 26.04 + GNOME 50** without touching their host system.
+
+Everything is orchestrated with a single `make install`.
+
+### Highlights
+
+| | |
+|---|---|
+| 🖥️ **Full GNOME 50 desktop** | Ubuntu Dock, top bar, GNOME apps, desktop icons |
+| 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
+| 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
+| 🧭 **Helium browser** | Default browser, installed from the official APT repository |
+| 🦀 **Tauri v2 ready** | Rust (rustup), Node.js 24 LTS, pnpm, yarn, `@tauri-apps/cli` |
+| 🧩 **Self-healing** | Watchdog restarts the VNC server if it loses its port |
+| 🧼 **Snap-free** | Snapd is blocked; no Firefox/Thunderbird snap packages |
+| ⚙️ **Make-driven** | One command to install, status, logs, shell, or destroy |
+
+---
+
+## Features
+
+- **Ubuntu 26.04 LTS (arm64)** base image, always the latest LTS release line.
+- **GNOME Shell 50.1** in headless Wayland mode with the full desktop experience:
+  panel, Ubuntu Dock, Nautilus, GNOME Terminal, Text Editor, Calculator, System
+  Monitor, Files, DING desktop icons, Yaru theme, and more.
+- **GNOME Remote Desktop 50.2 built from source with the VNC backend** (Ubuntu ships
+  RDP-only in this release), plus a small `dup()` patch and an `fd-guard.so`
+  `LD_PRELOAD` shim that keep the VNC listener stable in containers.
+- **noVNC + websockify** on port `6080` and native VNC on port `5900`
+  (published to the host as `5902` by default).
+- **OpenSSH server** with password authentication, exposing full shell control.
+- **Helium** (Chromium-based, beta) set as the default browser via `xdg-settings`.
+- **Tauri v2 system dependencies**: WebKitGTK 4.1, GTK3, Ayatana AppIndicator,
+  librsvg, libxdo, OpenSSL, libsoup-3, and more.
+- **Software rendering** with Mesa llvmpipe — no GPU required.
+- **Per-user persistence** through Docker named volumes (`admin-home`, `ssh-host-keys`).
+- **Health supervision**: `session.sh` monitors the VNC port and restarts the daemon
+  automatically if it dies (up to 20 times), logging to `grd-daemon.log`.
+
+---
+
+## Requirements
+
+| Requirement | Details |
+|---|---|
+| **Architecture** | `linux/arm64` (aarch64). Apple Silicon Macs and ARM Linux servers. |
+| **Docker** | Docker Desktop (macOS) or Docker Engine 24+ with Compose v2. |
+| **Disk** | ~10 GB free for the image and volumes. |
+| **Memory** | 4 GB RAM recommended for the container (desktop + browser). |
+| **Host ports** | `6080` (noVNC), `5902` (VNC), `2222` (SSH) — all configurable. |
+
+> x86_64 is **not** supported by default. See the [Roadmap](#roadmap) for multi-arch plans.
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/YanxReal/ubuntu-arm-docker.git
@@ -22,121 +107,244 @@ cd ubuntu-arm-docker
 make install
 ```
 
-`make install` crea el `.env` si no existe, construye la imagen, arranca el contenedor y
-espera a que noVNC responda. Al terminar imprime las direcciones y contraseñas de acceso.
+`make install` performs the whole bootstrap:
 
-¿Prefieres ver todos los atajos? `make` o `make help`.
+1. Creates `.env` from `.env.example` when missing.
+2. Verifies that Docker is running.
+3. Builds the image and starts the container.
+4. Waits until noVNC answers, then prints every access URL and password.
 
-## Acceso
+---
 
-| Acceso | URL / Dirección | Credenciales |
+## Access
+
+### Default credentials
+
+| Access | Address | Credentials |
 |---|---|---|
-| **noVNC** (navegador) | http://localhost:6080/vnc.html | contraseña `admin` |
-| VNC nativo | `localhost:5902` | contraseña `admin` |
-| **SSH** | `ssh admin@localhost -p 2222` | `admin` / `admin` |
-| Usuario del escritorio | `admin` | `admin` (sudo sin contraseña) |
+| **noVNC** (browser) | <http://localhost:6080/vnc.html> | VNC password: **`admin`** |
+| **VNC** (native client) | `localhost:5902` | VNC password: **`admin`** |
+| **SSH** | `ssh admin@localhost -p 2222` | Username: **`admin`** · Password: **`admin`** |
+| **Desktop user** | — | User `admin` · Password `admin` · `sudo` without password |
 
-En noVNC: pulsa **Connect** e introduce la contraseña. El primer frame puede tardar
-un par de segundos; si la pantalla está completamente quieta, mueve el ratón.
+> In noVNC, press **Connect** and type the password. The first frame can take a couple
+> of seconds; move the pointer if the screen looks idle.
 
-> **Un cliente VNC a la vez**: GNOME Remote Desktop no comparte sesión. Cierra noVNC
-> o el cliente VNC antes de abrir otro.
+> ⚠️ **One VNC client at a time.** GNOME Remote Desktop does not share a session:
+> disconnect noVNC or your VNC client before opening another one.
 
 ### SSH
 
 ```bash
-ssh admin@localhost -p 2222      # contraseña: admin
-sudo -i                          # control total (sin contraseña)
-ssh-copy-id -p 2222 admin@localhost   # opcional: acceso por clave
+ssh admin@localhost -p 2222     # password: admin
+sudo -i                         # full root shell (no password required)
+ssh-copy-id -p 2222 admin@localhost   # optional: key-based access
 ```
 
-## Uso diario
+---
 
-```bash
-make install     # construir + arrancar (primer uso)
-make status      # estado y comprobación de noVNC
-make logs        # logs en directo
-make shell       # shell como admin
-make dev ARGS="gnome-terminal"   # lanzar una app gráfica
-make down        # parar
-make reload      # reconstruir desde cero y arrancar
-make destroy     # borrar contenedor y home persistente
-make help        # todos los comandos
+## Architecture
+
+```
+┌──────────────────────────── Host: macOS arm64 / Linux arm64 ────────────────────────────┐
+│                                                                                          │
+│   Browser  ── HTTP :6080 ──►  websockify  ── TCP :5900 ──┐                               │
+│   VNC app  ── TCP  :5902 ────────────────────────────────┤                               │
+│   SSH app  ── TCP  :2222 ────────────────────────────────┤                               │
+│                                                          ▼                               │
+│   ┌─────────────────────── Container: ubuntu-desktop ────────────────────────┐           │
+│   │                                                                          │           │
+│   │   dbus (system + session)                                                │           │
+│   │   pipewire + wireplumber ──► screen capture                              │           │
+│   │   gnome-shell --headless (Wayland) ──► virtual monitor (created on       │           │
+│   │                                          demand by the VNC session)      │           │
+│   │   gnome-remote-desktop-daemon --headless (VNC backend, port 5900)        │           │
+│   │   sshd (port 22)                                                         │           │
+│   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                      │           │
+│   │   session.sh watchdog ── restarts the VNC daemon if the port is lost     │           │
+│   │                                                                          │           │
+│   └──────────────────────────────────────────────────────────────────────────┘           │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Lanzar apps gráficas desde la terminal
+### Design notes
 
-Los comandos de `docker compose exec` no heredan la sesión gráfica. Usa el wrapper `dev`:
+- **GNOME 50 is Wayland-only.** There is no Xorg session anymore, so classic
+  TightVNC/TigerVNC cannot host the desktop. The VNC server is
+  **GNOME Remote Desktop** in headless mode — the official GNOME solution.
+- **The virtual monitor belongs to the VNC session.** `gnome-shell` is started
+  *without* `--virtual-monitor`; the session creates the monitor when a client
+  connects, which is where the shell UI (panel, dock, apps) lives. This is why the
+  stream shows the full desktop instead of a bare background.
+- **Ubuntu's GNOME Remote Desktop is RDP-only**, so the image compiles upstream
+  **50.2** with `-Dvnc=true`. Two container-specific hardening touches are applied:
+  - a `dup()` patch in `grd-session-vnc.c` to avoid a double-close of the client
+    socket shared with GLib;
+  - `scripts/fd-guard.c`, an `LD_PRELOAD` shim that keeps fd 0 valid, preventing the
+    VNC listener from inheriting that descriptor and being closed by stray
+    `close(0)` calls.
+- **Resilience.** `session.sh` supervises the VNC daemon: if the port disappears or
+  the daemon exits, it is restarted automatically; the log lives in
+  `/run/user/1000/grd-daemon.log`.
+
+---
+
+## Configuration
+
+All settings live in `.env` (created automatically from `.env.example`):
+
+| Variable | Default | Description |
+|---|---|---|
+| `UBUNTU_VERSION` | `26.04` | Ubuntu release used to build the image. |
+| `PLATFORM` | `linux/arm64` | Docker platform for the service. |
+| `USERNAME` | `admin` | Desktop user and SSH account. |
+| `USER_UID` / `USER_GID` | `1000` | UID/GID created inside the container. |
+| `RESOLUTION` | `1920x1080` | Reference desktop size (the session monitor is 1920×1080). |
+| `TZ` | `UTC` | Time zone. |
+| `LANG` | `es_ES.UTF-8` | Locale (English and Spanish locales are generated). |
+| `VNC_PASSWORD` | `admin` | Password for both VNC and noVNC. |
+| `VNC_HOST_PORT` | `5902` | Host port mapped to VNC `5900` (`5900` is often taken by macOS Screen Sharing). |
+| `NOVNC_HOST_PORT` | `6080` | Host port for the noVNC web UI. |
+| `SSH_HOST_PORT` | `2222` | Host port mapped to container SSH `22`. |
+| `NODE_MAJOR` | `24` | Node.js major version installed in the image. |
+
+> After editing `.env`, run `make reload` to rebuild and restart with the new values.
+
+---
+
+## Make Targets
+
+Run `make` (or `make help`) to list everything:
+
+| Target | Description |
+|---|---|
+| `make install` | **Recommended.** Create `.env`, build, start, wait for noVNC, print access info. |
+| `make build` | (Re)build the Docker image. |
+| `make up` / `make down` | Start / stop the container (home volume is preserved). |
+| `make restart` | `down` + `up`. |
+| `make reload` | `down` + `build` + `up` (full recreate). |
+| `make status` | Show container status and noVNC HTTP check. |
+| `make logs` | Follow container logs. |
+| `make logs-grd` | Tail the GNOME Remote Desktop log. |
+| `make shell` | Open a shell as `admin` inside the container. |
+| `make ssh` | Open an SSH session to the container. |
+| `make dev ARGS="gnome-terminal"` | Launch a GUI app inside the graphical session. |
+| `make update` | `git pull` + `make install`. |
+| `make destroy` | Remove container **and** persistent volumes (destructive). |
+
+---
+
+## Development Workflow (Tauri v2)
 
 ```bash
-docker compose exec -u admin ubuntu-desktop dev gnome-terminal
-docker compose exec -u admin ubuntu-desktop dev nautilus
-docker compose exec -u admin ubuntu-desktop dev helium
-```
+# 1) Open a shell inside the container
+make shell
 
-### Tauri v2
-
-```bash
-docker compose exec -u admin ubuntu-desktop bash
+# 2) Create and run a Tauri app
 cd /workspace
 pnpm create tauri-app
-cd mi-app && pnpm install
-dev pnpm tauri dev        # dentro de la sesión gráfica
-dev pnpm tauri build      # binario Linux arm64
+cd my-app
+pnpm install
+
+# 3) Run it on the graphical session (noVNC tab must be open)
+dev pnpm tauri dev
+
+# 4) Build a Linux arm64 binary
+dev pnpm tauri build
 ```
 
-## Configuración (`.env`)
+The GUI wrapper `dev` injects the session environment
+(`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, `DBUS_SESSION_BUS_ADDRESS`) so applications
+launched from a terminal appear on the remote desktop.
 
-| Variable | Por defecto | Descripción |
+---
+
+## Data & Persistence
+
+| Volume / path | Type | Purpose |
 |---|---|---|
-| `UBUNTU_VERSION` | `26.04` | Versión de Ubuntu |
-| `VNC_PASSWORD` | `admin` | Contraseña de VNC y noVNC |
-| `NOVNC_HOST_PORT` | `6080` | Puerto de noVNC en el host |
-| `VNC_HOST_PORT` | `5902` | Puerto VNC en el host (el 5900 suele usarlo macOS) |
-| `SSH_HOST_PORT` | `2222` | Puerto SSH en el host |
-| `TZ` / `LANG` | `UTC` / `es_ES.UTF-8` | Zona horaria e idioma |
-| `USER_UID` / `USER_GID` | `1000` | UID/GID del usuario `admin` |
-| `RESOLUTION` | `1920x1080` | Referencia; el monitor virtual de la sesión es 1920x1080 |
+| `/home/admin` | Docker named volume `admin-home` | User files, settings, dconf, browser profiles. |
+| `/var/lib/ssh` | Docker named volume `ssh-host-keys` | Persistent SSH host keys (no warnings between restarts). |
+| `./workspace` | Bind mount → `/workspace` | Your source code, shared with the host. |
 
-## Estructura
+`make destroy` removes the container **and** both volumes; use it to start from scratch.
 
-```
-.
-├── Dockerfile              # Ubuntu 26.04 + GNOME 50 + GRD(VNC) + Helium + toolchain
-├── docker-compose.yml
-├── .env
-├── Makefile
-├── scripts/
-│   ├── entrypoint.sh       # dbus, sshd, noVNC y supervisión
-│   ├── session.sh          # pipewire + gnome-shell headless + GRD + watchdog
-│   ├── desktop-setup.sh    # dock, Helium por defecto, sin bloqueo
-│   ├── dev                 # lanza apps en la sesión gráfica
-│   └── fd-guard.c          # protección de fd 0 para el daemon de GRD
-└── workspace/              # tus proyectos (montado en /workspace)
-```
+---
 
-## Notas de arquitectura
+## Security
 
-- GNOME 50 es **Wayland-only**: no existe servidor X, por lo que el VNC lo sirve
-  GNOME Remote Desktop (modo headless) y no TightVNC/TigerVNC.
-- El monitor virtual lo crea la **sesión VNC** al conectarse; la UI del shell (panel,
-  dock) vive en él. Por eso `gnome-shell` no usa `--virtual-monitor`.
-- Ubuntu empaqueta GNOME Remote Desktop **sin VNC**; la imagen lo compila desde fuente
-  (50.2) con `-Dvnc=true` e incluye un pequeño parche `dup()` para evitar un doble
-  cierre de descriptores de libvncserver.
-- `session.sh` vigila el puerto VNC: si el daemon lo pierde, lo reinicia (hasta 20 veces)
-  y escribe el log en `/run/user/1000/grd-daemon.log`.
+> **This environment is intended for local development.** Its defaults are deliberately
+> weak to keep the first run frictionless.
 
-## Solución de problemas
+- Default passwords (`admin`) are used for the desktop user, VNC, and SSH.
+- Published ports bind to all interfaces by default. Restrict them in
+  `docker-compose.yml` (for example `127.0.0.1:6080:6080`) if your host is on an
+  untrusted network.
+- The `admin` user has passwordless `sudo` inside the container.
+- Consider changing `VNC_PASSWORD` and using SSH keys for anything beyond local use.
+
+Please report vulnerabilities as described in [SECURITY.md](SECURITY.md).
+
+---
+
+## Troubleshooting
+
+| Symptom | Solution |
+|---|---|
+| `make install` fails at build time | Ensure Docker is running and has network access; then `make build` to see the full log. |
+| noVNC shows a **black screen** | Wait a few seconds, then move the pointer. The stream only sends frames when the screen changes. |
+| `New connection has been rejected` | Another VNC client is connected. Close it and reconnect (one session at a time). |
+| VNC port disappears or stops responding | The watchdog restarts it automatically; check `make logs-grd`. |
+| GUI app does nothing when launched | Use `make dev ARGS="app"` so the session environment is injected. |
+| Helium fails to start (sandbox) | Run `dev helium --no-sandbox` (local use only). |
+| Need to reset everything | `make destroy && make install`. |
+
+Useful commands:
 
 ```bash
-docker compose logs -f                                   # arranque y sesión
-docker compose exec ubuntu-desktop cat /run/user/1000/grd-daemon.log   # log de GRD
-docker compose restart                                   # reinicio limpio
+make status                                      # container + noVNC check
+make logs                                        # container logs
+make logs-grd                                    # VNC server log
+docker compose exec ubuntu-desktop ss -ltn        # listening ports
 ```
 
-- **Pantalla negra al conectar**: espera unos segundos o mueve el ratón (el stream
-  solo envía frames cuando hay cambios).
-- **"New connection has been rejected"**: otro cliente VNC sigue conectado.
-- **Helium no arranca por el sandbox**: ejecuta `dev helium --no-sandbox` (solo local).
-- Las contraseñas por defecto son débiles a propósito: entorno **solo para uso local**.
+---
+
+## Roadmap
+
+- [ ] Multi-arch image (`linux/amd64` support for x86_64 hosts).
+- [ ] Optional `amd64` build matrix in CI.
+- [ ] Configurable virtual monitor size (currently 1920×1080).
+- [ ] Optional GPU acceleration (VA-API) documentation.
+- [ ] Automated smoke tests (noVNC HTTP check, VNC handshake, SSH).
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening
+an issue or a pull request, and follow the project's code of conduct.
+
+1. Fork the repository and create a feature branch.
+2. Make your changes and test them locally with `make reload`.
+3. Open a pull request describing the motivation and the validation you performed.
+
+---
+
+## License
+
+Released under the **MIT License** — see [LICENSE](LICENSE) for details.
+
+---
+
+## Acknowledgements
+
+- [Ubuntu](https://ubuntu.com/) and [GNOME](https://www.gnome.org/) for the desktop.
+- [GNOME Remote Desktop](https://gitlab.gnome.org/GNOME/gnome-remote-desktop) for the
+  headless VNC backend.
+- [noVNC](https://github.com/novnc/noVNC) and
+  [websockify](https://github.com/novnc/websockify) for browser-based access.
+- [Helium](https://helium.computer/) for the default browser.
+- [Tauri](https://tauri.app/), [Rust](https://www.rust-lang.org/),
+  [Node.js](https://nodejs.org/), [pnpm](https://pnpm.io/) and
+  [Yarn](https://yarnpkg.com/) for the development toolchain.

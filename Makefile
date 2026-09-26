@@ -19,8 +19,7 @@ help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUbuntu ARM Docker\033[0m — comandos disponibles:\n\n"} \
 	     /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "  Primer paso:  \033[1mmake install\033[0m"
-	@echo ""
+	@printf "  Primer paso:  \033[1mmake install\033[0m\n\n"
 
 install: ## Construye y arranca todo (primer uso)
 	@test -f .env || cp .env.example .env
