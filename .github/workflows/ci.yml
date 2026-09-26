@@ -24,7 +24,7 @@ jobs:
 
       - name: Check shell script syntax
         run: |
-          for script in scripts/*.sh; do
+          for script in install.sh scripts/*.sh; do
             echo "bash -n ${script}"
             bash -n "${script}"
           done
@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck -S error scripts/*.sh
+          shellcheck -S error install.sh scripts/*.sh
 
       - name: Lint Dockerfile (hadolint)
         uses: hadolint/hadolint-action@v3.1.0

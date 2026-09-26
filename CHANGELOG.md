@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `install.sh`: one-line installer that checks requirements, clones the repository,
+  creates `.env` and runs `make install` (`curl -fsSL .../install.sh | bash`), with
+  `--dir`, `--branch` and `--no-install` options.
+- Install badge and the one-line quick start in both READMEs (English and Spanish).
+
 ## [1.0.0] - 2026-09-26
 
 ### Added

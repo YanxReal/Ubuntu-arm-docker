@@ -4,6 +4,7 @@
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/26.04/)
 [![GNOME](https://img.shields.io/badge/GNOME-50-4A86CF?logo=gnome&logoColor=white)](https://release.gnome.org/50/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Install](https://img.shields.io/badge/install-curl_%7C_bash-brightgreen)](#quick-start)
 [![CI](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -52,6 +53,7 @@ Everything is orchestrated with a single `make install`.
 
 | | |
 |---|---|
+| ⚡ **One-line install** | `curl … install.sh \| bash` clones the repo and runs everything |
 | 🖥️ **Full GNOME 50 desktop** | Ubuntu Dock, top bar, GNOME apps, desktop icons |
 | 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
 | 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
@@ -101,13 +103,37 @@ Everything is orchestrated with a single `make install`.
 
 ## Quick Start
 
+### Option A — One-line install (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash
+```
+
+The installer checks your system (arm64 + Docker), clones the repository into
+`./ubuntu-arm-docker`, creates `.env`, and runs `make install`.
+
+Useful variants:
+
+```bash
+# Choose the destination directory and inspect before building
+curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --dir ~/dev/ubuntu-desktop --no-install
+
+# Install a specific branch
+curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --branch main
+
+# Help
+curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --help
+```
+
+### Option B — Manual install
+
 ```bash
 git clone https://github.com/YanxReal/ubuntu-arm-docker.git
 cd ubuntu-arm-docker
 make install
 ```
 
-`make install` performs the whole bootstrap:
+Either way, `make install`:
 
 1. Creates `.env` from `.env.example` when missing.
 2. Verifies that Docker is running.
