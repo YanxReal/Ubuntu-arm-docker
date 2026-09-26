@@ -49,4 +49,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   VNC session instead of a separate `--virtual-monitor` on `gnome-shell`.
 - SSH `authorized_keys` and host keys no longer regenerate on every container restart.
 
-[1.0.0]: https://github.com/YanxReal/ubuntu-arm-docker/releases/tag/v1.0.0
+[1.0.0]: https://github.com/YanxReal/Ubuntu-arm-docker/releases/tag/v1.0.0

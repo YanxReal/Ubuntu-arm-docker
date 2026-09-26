@@ -3,7 +3,7 @@
 Thanks for taking the time to contribute! 🎉
 
 This document describes the workflow, standards, and expectations for
-contributions to **ubuntu-arm-docker**.
+contributions to **Ubuntu-arm-docker**.
 
 - [Ways to contribute](#ways-to-contribute)
 - [Development setup](#development-setup)
@@ -29,7 +29,7 @@ contributions to **ubuntu-arm-docker**.
 Requirements: Docker (Desktop or Engine) on an `arm64` host.
 
 ```bash
-git clone https://github.com/YanxReal/ubuntu-arm-docker.git
+git clone https://github.com/YanxReal/Ubuntu-arm-docker.git
 cd ubuntu-arm-docker
 make install      # build + start + access info
 make status       # container status and noVNC check

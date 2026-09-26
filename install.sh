@@ -5,7 +5,7 @@
 # Clones the repository and runs `make install` (build + start + access info).
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 #
 # Options:
 #   --dir <path>      Directory to clone into (default: ./ubuntu-arm-docker)
@@ -18,7 +18,7 @@
 #
 set -Eeuo pipefail
 
-REPO_URL="${UBUNTU_ARM_DOCKER_REPO:-https://github.com/YanxReal/ubuntu-arm-docker.git}"
+REPO_URL="${UBUNTU_ARM_DOCKER_REPO:-https://github.com/YanxReal/Ubuntu-arm-docker.git}"
 BRANCH="${UBUNTU_ARM_DOCKER_BRANCH:-main}"
 TARGET_DIR="${UBUNTU_ARM_DOCKER_DIR:-ubuntu-arm-docker}"
 RUN_INSTALL=1
@@ -32,11 +32,11 @@ show_help() {
     cat <<'EOF'
 Ubuntu ARM Docker — one-line installer
 
-Clones https://github.com/YanxReal/ubuntu-arm-docker and runs `make install`
+Clones https://github.com/YanxReal/Ubuntu-arm-docker and runs `make install`
 to build and start a full Ubuntu 26.04 + GNOME 50 desktop in Docker (arm64).
 
 Usage:
-  curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 
 Options:
   --dir <path>      Directory to clone into (default: ./ubuntu-arm-docker)

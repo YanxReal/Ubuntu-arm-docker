@@ -5,7 +5,7 @@
 [![GNOME](https://img.shields.io/badge/GNOME-50-4A86CF?logo=gnome&logoColor=white)](https://release.gnome.org/50/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Instalar](https://img.shields.io/badge/instalar-curl_%7C_bash-brightgreen)](#inicio-rápido)
-[![CI](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/ubuntu-arm-docker/actions/workflows/ci.yml)
+[![CI](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -108,7 +108,7 @@ Todo se orquesta con un solo `make install`.
 ### Opción A — Instalación en una línea (recomendada)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 ```
 
 El instalador comprueba el sistema (arm64 + Docker), clona el repositorio en
@@ -118,19 +118,19 @@ Variantes útiles:
 
 ```bash
 # Elegir el directorio de destino y revisar antes de construir
-curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --dir ~/dev/ubuntu-desktop --no-install
+curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash -s -- --dir ~/dev/ubuntu-desktop --no-install
 
 # Instalar una rama concreta
-curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --branch main
+curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash -s -- --branch main
 
 # Ayuda
-curl -fsSL https://raw.githubusercontent.com/YanxReal/ubuntu-arm-docker/main/install.sh | bash -s -- --help
+curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash -s -- --help
 ```
 
 ### Opción B — Instalación manual
 
 ```bash
-git clone https://github.com/YanxReal/ubuntu-arm-docker.git
+git clone https://github.com/YanxReal/Ubuntu-arm-docker.git
 cd ubuntu-arm-docker
 make install
 ```
