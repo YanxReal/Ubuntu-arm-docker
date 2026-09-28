@@ -163,6 +163,10 @@ RUN set -eux; \
     sed -i 's|^#include "config.h"|#include "config.h"\n\n#include <unistd.h>|' src/grd-session-vnc.c; \
     sed -i 's|rfb_screen->inetdSock = g_socket_get_fd (socket);|rfb_screen->inetdSock = dup (g_socket_get_fd (socket));|' src/grd-session-vnc.c; \
     grep -q "dup (g_socket_get_fd" src/grd-session-vnc.c; \
+    # Permitir varios clientes VNC a la vez (AI + humano): subir el límite
+    sed -i 's|grd_throttler_limits_set_max_global_connections (limits, 1);|grd_throttler_limits_set_max_global_connections (limits, 4);|' src/grd-vnc-server.c; \
+    grep -q "max_global_connections (limits, 4)" src/grd-vnc-server.c; \
+    # (neverShared se mantiene TRUE: cada conexión es su propia screen en modo inetd)
     meson setup build --prefix=/usr --buildtype=release \
         -Drdp=false -Dvnc=true -Dsystemd=false -Dman=false -Dtests=false; \
     ninja -C build; \
@@ -235,7 +239,27 @@ RUN set -eux; \
       > /etc/ssh/sshd_config.d/10-dev-desktop.conf
 
 # ---------------------------------------------------------------------------
-# 12) Scripts de arranque
+# 12) Control de escritorio para agentes / IA
+#     - grim:    captura de pantalla a nivel Wayland (no usa el slot de VNC)
+#     - wtype:   teclado vía protocolo virtual-keyboard (funciona siempre)
+#     - ydotool: puntero (mouse); necesita /dev/uinput si está disponible
+#     - tesseract: OCR para que la IA lea texto de las capturas
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        grim wtype ydotool \
+        tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa \
+        python3-pil python3-requests \
+    ; \
+    rm -rf /var/lib/apt/lists/*; \
+    # Cliente VNC (captura + input) para control de la IA
+    python3 -m pip install --no-cache-dir --break-system-packages \
+        --quiet vncdotool; \
+    command -v grim; command -v wtype; command -v ydotool; command -v tesseract
+
+# ---------------------------------------------------------------------------
+# 13) Scripts de arranque
 # ---------------------------------------------------------------------------
 COPY scripts/ /usr/local/bin/
 RUN set -eux; \

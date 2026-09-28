@@ -26,6 +26,7 @@
 - [Multiplataforma](#multiplataforma)
 - [Inicio rápido](#inicio-rápido)
 - [Accesos](#accesos)
+- [Control para IA / asistentes](#control-para-ia--asistentes)
 - [Arquitectura](#arquitectura)
 - [Configuración](#configuración)
 - [Comandos de Make](#comandos-de-make)
@@ -208,6 +209,41 @@ ssh admin@localhost -p 2222     # contraseña: admin
 sudo -i                         # shell root completa (sin contraseña)
 ssh-copy-id -p 2222 admin@localhost   # opcional: acceso por clave
 ```
+
+---
+
+## Control para IA / asistentes
+
+El contenedor está montado para que un agente de IA (o automatización) pueda **ver y
+operar** el escritorio sin quitarte tu sesión de noVNC/VNC. GRD se compila con **VNC
+multi-cliente** (`max_global_connections ≥ 2`), de modo que el agente captura frames por
+VNC mientras tú sigues mirando.
+
+Todo vive detrás de SSH (puerto `2222`) y del atajo `make assistant`:
+
+```bash
+# Desde el host
+make assistant ARGS="status"            # estado de la sesión y herramientas
+make assistant ARGS="shot /tmp/s.png"   # captura de pantalla (1920×1080)
+make assistant ARGS="ocr /tmp/s.png"    # leer texto de una captura (OCR)
+make assistant ARGS="open gnome-terminal"   # lanzar una app
+make assistant ARGS="run 'ls -la'"          # comando en la sesión gráfica
+
+# Igual por SSH
+ssh admin@localhost -p 2222 'assistant shot /tmp/s.png'
+```
+
+| Comando | Qué hace |
+|---|---|
+| `assistant shot [out.png]` | Captura la pantalla completa por VNC |
+| `assistant region X Y W H [out]` | Captura una región |
+| `assistant ocr [png]` | OCR de una captura (tesseract, spa+eng) |
+| `assistant open <app>` / `run <cmd>` | Lanza apps/comandos en la sesión gráfica |
+| `assistant status` | Estado y herramientas disponibles |
+
+**Sobre el input GUI:** en este entorno *headless* Wayland los protocolos de teclado
+virtual y screencopy no están expuestos y GRD VNC corre en `view-only`, así que **el
+control robusto es por capturas + `open`/`run` + OCR**, no clicando dentro de las apps.
 
 ---
 

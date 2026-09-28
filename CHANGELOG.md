@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `scripts/assistant`: control de escritorio para agentes/IA — capturas por VNC
+  (`shot`/`region`), OCR (`ocr`), lanzar apps/comandos (`open`/`run`), estado y la
+  herramienta `make assistant`.
+- `vncdotool`, `grim`, `wtype`, `ydotool`, `tesseract-ocr` y `python3-pil` en la imagen.
 - `install.ps1`: native Windows PowerShell installer (`irm … \| iex`) with no `make`
   dependency; mirrors `install.sh` (checks, clone, `.env`, build, start, access info).
 - `.gitattributes`: forces LF line endings so cloning/editing on Windows never breaks
@@ -18,10 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- GRD se compila con **VNC multi-cliente** (`max_global_connections` ≥ 2): el agente puede
+  capturar frames por VNC mientras tú sigues mirando por noVNC/VNC (ya no "1 a la vez").
 - `install.sh` is now portable: runs on Windows (Git Bash / MSYS2 / WSL) and warns
   (instead of failing) on non-arm64 hosts, which work via QEMU emulation.
 - CI now also validates `install.ps1` syntax, enforces LF endings, and smoke-tests the
-  `--help` of both installers.
+  `--help` of both installers plus `scripts/assistant`.
+
+### Notes
+
+- El input GUI (teclear/click en apps) es **limitado** en este entorno headless: Wayland
+  no expone los protocolos virtual-keyboard/screencopy y GRD VNC corre en view-only.
+  El control lo dan de forma robusta las capturas + `assistant open/run` + OCR.
 
 ## [1.0.0] - 2026-09-26
 

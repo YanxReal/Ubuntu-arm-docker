@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+#
+# assistant — capa de control del escritorio para agentes/IA
+# ============================================================
+# Da a un agente (humano o IA) "vista" y control sobre el escritorio GNOME
+# (Wayland headless). El contenedor permite VARIOS clientes VNC a la vez
+# (GRD compilado con max_global_connections>=2), así que puedes seguir mirando
+# por noVNC/VNC mientras la IA captura sin quitarte tu sesión.
+#
+# Lo que funciona de forma ROBUSTA aquí:
+#   - shot / region / ocr : captura por VNC + OCR (tesseract)
+#   - run / open          : lanza apps o comandos en la sesión gráfica (dev)
+#   - status              : estado de la sesión y herramientas
+#
+# El input GUI (type/click/move) es limitado en este entorno headless (Wayland
+# no expone los protocolos virtual-keyboard/screencopy y GRD VNC es view-only),
+# así que estos subcomandos intentan lo posible y avisan si no es aplicable.
+#
+# Subcomandos:
+#   assistant status                 -> estado de la sesión y herramientas
+#   assistant shot [out.png]         -> captura pantalla completa (VNC)
+#   assistant region X Y W H [out]   -> captura una región
+#   assistant ocr [png]              -> OCR de una captura (tesseract)
+#   assistant open <app>             -> lanza un app en la sesión (dev)
+#   assistant run <cmd...>           -> ejecuta un comando en la sesión
+#   assistant type "texto"           -> intenta escribir (limitado en headless)
+#   assistant key ctrl+c|super...    -> intenta atajo (limitado en headless)
+#   assistant click X Y / move X Y   -> intenta puntero (limitado en headless)
+#
+set -euo pipefail
+
+ENV_FILE="/run/user/$(id -u)/desktop-env"
+SHOT_DIR="${HOME:-/home/$(id -un)}/.assistant"
+VNC_SOCK="127.0.0.1::5900"                # GRD VNC dentro del contenedor
+VNC_PASS="${VNC_PASSWORD:-admin}"
+VNC="vncdo -s ${VNC_SOCK} -p ${VNC_PASS}"
+
+if [ -r "${ENV_FILE}" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "${ENV_FILE}"
+  set +a
+fi
+
+die() { echo "✗ $*" >&2; exit 1; }
+
+cmd_help() { sed -n '2,40p' "$0"; exit 0; }
+
+vcndoike() { command -v vncdo >/dev/null 2>&1; }
+
+# ── status ─────────────────────────────────────────────────────────────────
+cmd_status() {
+  echo "Fecha:  $(date)"
+  echo "User:   $(id -un) (uid $(id -u))"
+  [ -n "${WAYLAND_DISPLAY:-}" ] && echo "Wayland: ${WAYLAND_DISPLAY}" || echo "Wayland: (sin sesión)"
+  [ -S "${XDG_RUNTIME_DIR:-/nonexistent}/${WAYLAND_DISPLAY:-}" ] \
+    && echo "Sesión:  OK (socket presente)" || echo "Sesión:  NO (gnome-shell caído)"
+  echo "captura: $([ -x "$(command -v vncdo)" ] && echo 'vncdo OK (multi-cliente)' || echo 'vncdo AUSENTE')"
+  echo "ocr:     $(command -v tesseract >/dev/null && echo OK || echo ausente)"
+  (echo > /dev/tcp/127.0.0.1/5900) 2>/dev/null \
+    && echo "VNC:     respondiendo ($VNC_SOCK)" \
+    || echo "VNC:     sin respuesta en 5900"
+  echo "input:   limitado en este entorno headless (VNC view-only / sin uinput)"
+}
+
+# ── shot / region / ocr ────────────────────────────────────────────────────
+cmd_shot() {
+  vcndoike || die "vncdo (vncdotool) no está instalado."
+  local out="${1:-${SHOT_DIR}/screen.png}"
+  mkdir -p "$(dirname "$out")"
+  $VNC capture "$out" >/dev/null 2>&1
+  [ -s "$out" ] || die "Captura vacía (¿VNC levantado?)."
+  echo "ok $out"
+}
+
+cmd_region() {
+  vcndoike || die "vncdo (vncdotool) no está instalado."
+  local x="${1:?Uso: assistant region X Y W H [out.png]}"
+  local y="${2:?Uso: assistant region X Y W H [out.png]}"
+  local w="${3:?Uso: assistant region X Y W H [out.png]}"
+  local h="${4:?Uso: assistant region X Y W H [out.png]}"
+  local out="${5:-${SHOT_DIR}/region.png}"
+  mkdir -p "$(dirname "$out")"
+  $VNC rcapture "$out" "$x" "$y" "$w" "$h" >/dev/null 2>&1
+  [ -s "$out" ] || die "Región vacía."
+  echo "ok $out"
+}
+
+cmd_ocr() {
+  command -v tesseract >/dev/null 2>&1 || die "tesseract no está instalado."
+  local png="${1:-${SHOT_DIR}/screen.png}"
+  [ -f "$png" ] || die "No existe la captura: $png"
+  tesseract "$png" stdout -l "${OCRLANG:-spa+eng}" 2>/dev/null
+}
+
+# ── open / run (dev) ───────────────────────────────────────────────────────
+cmd_open() { [ -n "${1:-}" ] || die "Uso: assistant open <app>"; exec dev "$@"; }
+cmd_run()  { [ -n "${1:-}" ] || die "Uso: assistant run <cmd...>"; exec dev "$@"; }
+
+# ── input (limitado en headless — intento honesto) ─────────────────────────
+cmd_type() {
+  if command -v wtype >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    wtype -- "${1:?Uso: assistant type \"texto\"}" >/dev/null 2>&1 \
+      && echo "ok tecleado (wtype): ${1}" && return 0
+  fi
+  echo "✗ el teclado Wayland (wtype) no está disponible o el compositor no lo soporta en headless." >&2
+  return 1
+}
+
+cmd_key() {
+  [ -n "${1:-}" ] || die "Uso: assistant key ctrl+c|super|alt+tab..."
+  local combo="$1"
+  local mapped
+  case "$combo" in
+    ctrl+c) mapped="ctrl c" ;; ctrl+v) mapped="ctrl v" ;; ctrl+a) mapped="ctrl a" ;;
+    enter)  mapped="Return" ;; tab)    mapped="Tab"    ;; space)  mapped="space" ;;
+    esc)    mapped="Escape"  ;;
+    *) echo "✗ atajo no mapeado: $combo (usa ctrl+c, enter, tab...)" >&2; return 1 ;;
+  esac
+  if command -v wtype >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    # shellcheck disable=SC2086
+    wtype -k ${mapped} >/dev/null 2>&1 && echo "ok tecla: $combo" && return 0
+  fi
+  echo "✗ teclado no disponible en este entorno headless." >&2
+  return 1
+}
+
+cmd_click() {
+  vcndoike || die "vncdo no está instalado."
+  echo "✗ input (click) no es fiable aquí: GRD VNC corre en view-only. Usa assistant open/run." >&2
+  local x="${1:?}" y="${2:?}"
+  $VNC move "$x" "$y" >/dev/null 2>&1 && $VNC click 1 >/dev/null 2>&1 && echo "ok click ($x,$y)" && return 0
+  return 1
+}
+
+cmd_move() {
+  vcndoike || die "vncdo no está instalado."
+  local x="${1:?Uso: assistant move X Y}" y="${2:?}"
+  $VNC move "$x" "$y" >/dev/null 2>&1 && echo "ok move ($x,$y)" || { echo "✗ no se pudo mover el puntero." >&2; return 1; }
+}
+
+# ── dispatch ───────────────────────────────────────────────────────────────
+case "${1:-help}" in
+  status)   cmd_status ;;
+  shot)     cmd_shot "${2:-}" ;;
+  region)   cmd_region "${2:-}" "${3:-}" "${4:-}" "${5:-}" "${6:-}" ;;
+  ocr)      cmd_ocr "${2:-}" ;;
+  open)     shift; cmd_open "$@" ;;
+  run)      shift; cmd_run "$@" ;;
+  type)     cmd_type "${2:-}" ;;
+  key)      cmd_key "${2:-}" ;;
+  click)    cmd_click "${2:-}" "${3:-}" ;;
+  move)     cmd_move "${2:-}" "${3:-}" ;;
+  help|-h|--help) cmd_help ;;
+  *) echo "Subcomando desconocido: $1" >&2; cmd_help >&2; exit 1 ;;
+esac

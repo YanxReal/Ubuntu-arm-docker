@@ -24,7 +24,7 @@ jobs:
 
       - name: Check shell script syntax
         run: |
-          for script in install.sh scripts/*.sh; do
+          for script in install.sh scripts/*.sh scripts/assistant; do
             echo "bash -n ${script}"
             bash -n "${script}"
           done
@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck -S error install.sh scripts/*.sh
+          shellcheck -S error install.sh scripts/*.sh scripts/assistant
 
       - name: Check PowerShell installer syntax
         run: |

@@ -13,7 +13,7 @@ export
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install build up down restart status logs logs-grd shell ssh dev reload destroy update
+.PHONY: help install build up down restart status logs logs-grd shell ssh dev assistant reload destroy update
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUbuntu ARM Docker\033[0m — comandos disponibles:\n\n"} \
@@ -72,6 +72,9 @@ ssh: ## Abre SSH contra el contenedor
 dev: ## Lanza una app gráfica:  make dev ARGS="gnome-terminal"
 	@test -n "$(ARGS)" || { echo 'Uso: make dev ARGS="gnome-terminal"'; exit 1; }
 	$(COMPOSE) exec -d -u admin $(SERVICE) dev $(ARGS)
+
+assistant: ## Control de escritorio para la IA:  make assistant ARGS="shot"
+	@$(COMPOSE) exec -T -u admin $(SERVICE) assistant $(ARGS)
 
 reload: down build up ## Reconstruye desde cero y arranca
 
