@@ -23,6 +23,7 @@
 - [Overview](#overview)
 - [Features](#features)
 - [Requirements](#requirements)
+- [Cross-Platform](#cross-platform)
 - [Quick Start](#quick-start)
 - [Access](#access)
 - [Architecture](#architecture)
@@ -53,7 +54,8 @@ Everything is orchestrated with a single `make install`.
 
 | | |
 |---|---|
-| ⚡ **One-line install** | `curl … install.sh \| bash` clones the repo and runs everything |
+| ⚡ **One-line install** | `curl … install.sh \| bash` (macOS/Linux) or `irm … install.ps1 \| iex` (Windows) |
+| 🪟 **Cross-platform** | Same container on macOS, Linux & Windows (PowerShell) |
 | 🖥️ **Full GNOME 50 desktop** | Ubuntu Dock, top bar, GNOME apps, desktop icons |
 | 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
 | 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
@@ -91,13 +93,41 @@ Everything is orchestrated with a single `make install`.
 
 | Requirement | Details |
 |---|---|
-| **Architecture** | `linux/arm64` (aarch64). Apple Silicon Macs and ARM Linux servers. |
-| **Docker** | Docker Desktop (macOS) or Docker Engine 24+ with Compose v2. |
+| **Architecture** | `linux/arm64` (aarch64) — **native** on Apple Silicon and ARM Linux/Windows. Runs on x86_64 hosts via QEMU emulation (slower). |
+| **Docker** | Docker Desktop (macOS/Windows) or Docker Engine 24+ with Compose v2 (Linux). |
 | **Disk** | ~10 GB free for the image and volumes. |
 | **Memory** | 4 GB RAM recommended for the container (desktop + browser). |
 | **Host ports** | `6080` (noVNC), `5902` (VNC), `2222` (SSH) — all configurable. |
 
-> x86_64 is **not** supported by default. See the [Roadmap](#roadmap) for multi-arch plans.
+> Everything runs inside the container (Linux), so the **host OS can be macOS, Linux
+> or Windows**. The container scripts are Linux-only and are never executed on the host.
+
+---
+
+## Cross-Platform
+
+Because the desktop itself runs inside a Linux container, the **only** host-side pieces
+are the installer and Docker. That means the same container works on any OS that can run
+Docker, with one caveat: the image is **arm64**, so on Intel/AMD (x86_64) hosts it runs
+under **QEMU emulation** (slower, but fully functional).
+
+| Host OS | Install command | Notes |
+|---|---|---|
+| **macOS** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | Native on Apple Silicon; emulated on Intel. |
+| **Linux (arm64)** | same `curl … \| bash` | Native; best performance. |
+| **Linux (x86_64)** | same `curl … \| bash` | Emulated; enable helper first: `sudo apt-get install qemu-user-static binfmt-support`. |
+| **Windows (PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Native shell; Docker Desktop emulates arm64. No `make` needed. |
+| **Windows (WSL2 / Git Bash)** | same `curl … \| bash` | If you already use WSL2 or Git Bash; requires `make`. |
+
+The bash (`install.sh`) and PowerShell (`install.ps1`) installers do the same job —
+check requirements, clone the repo, create `.env`, and build + start the container.
+They auto-detect your architecture and only **warn** on non-arm64 (emulation), never
+fail, so the same container runs on every platform.
+
+> The in-container scripts (`scripts/*.sh`, `scripts/entrypoint.sh`, `scripts/session.sh`,
+> `scripts/dev`) all run **inside the Linux container**, which is why they work
+> identically no matter which host OS you use. A `.gitattributes` file forces LF line
+> endings so cloning or editing on Windows can never break them with CRLF.
 
 ---
 
@@ -105,12 +135,20 @@ Everything is orchestrated with a single `make install`.
 
 ### Option A — One-line install (recommended)
 
+**macOS & Linux** (native shell):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 ```
 
-The installer checks your system (arm64 + Docker), clones the repository into
-`./ubuntu-arm-docker`, creates `.env`, and runs `make install`.
+**Windows** (PowerShell — no `make` required):
+
+```powershell
+irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 | iex
+```
+
+The installer checks your system (architecture + Docker), clones the repository into
+`./ubuntu-arm-docker`, creates `.env`, and builds + starts the container.
 
 Useful variants:
 

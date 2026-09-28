@@ -9,10 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `install.sh`: one-line installer that checks requirements, clones the repository,
-  creates `.env` and runs `make install` (`curl -fsSL .../install.sh | bash`), with
-  `--dir`, `--branch` and `--no-install` options.
-- Install badge and the one-line quick start in both READMEs (English and Spanish).
+- `install.ps1`: native Windows PowerShell installer (`irm … \| iex`) with no `make`
+  dependency; mirrors `install.sh` (checks, clone, `.env`, build, start, access info).
+- `.gitattributes`: forces LF line endings so cloning/editing on Windows never breaks
+  the bash scripts with CRLF.
+- Cross-platform section in both READMEs: one-liners for macOS, Linux and Windows plus
+  a platform matrix and emulation notes.
+
+### Changed
+
+- `install.sh` is now portable: runs on Windows (Git Bash / MSYS2 / WSL) and warns
+  (instead of failing) on non-arm64 hosts, which work via QEMU emulation.
+- CI now also validates `install.ps1` syntax, enforces LF endings, and smoke-tests the
+  `--help` of both installers.
 
 ## [1.0.0] - 2026-09-26
 

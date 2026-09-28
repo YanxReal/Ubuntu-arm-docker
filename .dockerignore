@@ -1,9 +1,12 @@
 .git
 .github
 .gitignore
+.gitattributes
 .env
 **/*.md
 LICENSE
 Makefile
+install.sh
+install.ps1
 docker-compose.yml
 workspace/

@@ -35,6 +35,28 @@ jobs:
           sudo apt-get install -y -qq shellcheck
           shellcheck -S error install.sh scripts/*.sh
 
+      - name: Check PowerShell installer syntax
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq powershell
+          pwsh -NoProfile -Command '
+            $tokens = $null; $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile(
+              "install.ps1", [ref]$tokens, [ref]$errors)
+            if ($errors.Count) { $errors | ForEach-Object { "PS: $($_.Message)" }; exit 1 }
+            "install.ps1 syntax OK"
+          '
+
+      - name: Installers must be LF (no CRLF — breaks bash/PowerShell on Windows)
+        run: |
+          ! grep -rlP '\r$' install.sh install.ps1 scripts/ Makefile && echo "LF OK"
+
+      - name: Installers --help exit cleanly
+        run: |
+          bash install.sh --help >/dev/null
+          pwsh -NoProfile -Command '& ./install.ps1 -Help | Out-Null'
+          echo "help OK"
+
       - name: Lint Dockerfile (hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with:

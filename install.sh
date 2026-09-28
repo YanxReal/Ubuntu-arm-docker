@@ -4,6 +4,9 @@
 # ======================================
 # Clones the repository and runs `make install` (build + start + access info).
 #
+# Works on Linux, macOS and Windows (Git Bash / MSYS2 / WSL). On native Windows
+# PowerShell use install.ps1 instead.
+#
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 #
@@ -34,6 +37,9 @@ Ubuntu ARM Docker — one-line installer
 
 Clones https://github.com/YanxReal/Ubuntu-arm-docker and runs `make install`
 to build and start a full Ubuntu 26.04 + GNOME 50 desktop in Docker (arm64).
+
+Works on Linux, macOS and Windows (Git Bash / MSYS2 / WSL). On native Windows
+PowerShell, use install.ps1 instead.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
@@ -85,20 +91,35 @@ printf '\n\033[1mUbuntu ARM Docker — installer\033[0m\n\n'
 # ── Requirements ─────────────────────────────────────────────────────────────
 info "Checking requirements..."
 
+# OS: Linux, macOS, or Windows via Git Bash / MSYS2 / Cygwin (and WSL = Linux).
 case "$(uname -s)" in
     Darwin|Linux) : ;;
-    *) die "Unsupported OS: $(uname -s). This project targets macOS and Linux on arm64." ;;
+    MINGW*|MSYS*|CYGWIN*|*_NT-*) warn "Windows (Git Bash) detected — this installer works, but prefer install.ps1 for native PowerShell." ;;
+    *) die "Unsupported OS: $(uname -s). Use Linux, macOS, or Windows with Git Bash / WSL." ;;
 esac
 
+# Architecture: arm64 is native. Other hosts still work via QEMU emulation.
 case "$(uname -m)" in
-    arm64|aarch64) : ;;
-    *) die "This project requires an arm64 host (detected: $(uname -m))." ;;
+    arm64|aarch64)
+        ok "Architecture $(uname -m) — native"
+        ;;
+    *)
+        warn "You are on $(uname -m). The image is arm64, so it will run under QEMU emulation (slower)."
+        if [ "$(uname -s)" = "Linux" ]; then
+            echo "      On x86_64 Linux, enable emulation first:  sudo apt-get install qemu-user-static binfmt-support"
+        fi
+        echo "      Docker Desktop (macOS/Windows) emulates arm64 automatically."
+        ;;
 esac
 
 command -v git  >/dev/null 2>&1 || die "git is required but not installed."
-command -v make >/dev/null 2>&1 || die "make is required but not installed. On macOS run: xcode-select --install"
 command -v docker >/dev/null 2>&1 || die "Docker is required: https://www.docker.com/products/docker-desktop/"
 docker info >/dev/null 2>&1 || die "Docker is installed but not running. Start Docker Desktop (or dockerd) and retry."
+
+# `make` is only needed for the full install (not for --no-install / --help).
+if [ "${RUN_INSTALL}" -eq 1 ] && ! command -v make >/dev/null 2>&1; then
+    die 'make is required to run the full install. On macOS: xcode-select --install. On Windows use install.ps1 (PowerShell) instead. Or use --no-install.'
+fi
 
 ok "Requirements OK ($(uname -s) $(uname -m), Docker $(docker version --format '{{.Server.Version}}' 2>/dev/null || echo 'ok'))"
 

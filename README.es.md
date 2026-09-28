@@ -23,6 +23,7 @@
 - [Descripción general](#descripción-general)
 - [Características](#características)
 - [Requisitos](#requisitos)
+- [Multiplataforma](#multiplataforma)
 - [Inicio rápido](#inicio-rápido)
 - [Accesos](#accesos)
 - [Arquitectura](#arquitectura)
@@ -53,7 +54,8 @@ Todo se orquesta con un solo `make install`.
 
 | | |
 |---|---|
-| ⚡ **Instalación en una línea** | `curl … install.sh \| bash` clona el repo y lo pone todo en marcha |
+| ⚡ **Instalación en una línea** | `curl … install.sh \| bash` (macOS/Linux) o `irm … install.ps1 \| iex` (Windows) |
+| 🪟 **Multiplataforma** | El mismo contenedor en macOS, Linux y Windows (PowerShell) |
 | 🖥️ **Escritorio GNOME 50 completo** | Dock de Ubuntu, panel superior, apps GNOME, iconos de escritorio |
 | 🌐 **Dos vías remotas** | noVNC en el navegador y VNC nativo (misma contraseña) |
 | 🔐 **Acceso SSH** | Usuario `admin` con `sudo` sin contraseña (equivalente a root) |
@@ -92,14 +94,42 @@ Todo se orquesta con un solo `make install`.
 
 | Requisito | Detalles |
 |---|---|
-| **Arquitectura** | `linux/arm64` (aarch64). Macs Apple Silicon y servidores Linux ARM. |
-| **Docker** | Docker Desktop (macOS) o Docker Engine 24+ con Compose v2. |
+| **Arquitectura** | `linux/arm64` (aarch64) — **nativo** en Apple Silicon y Linux/Windows ARM. En hosts x86_64 funciona por emulación QEMU (más lento). |
+| **Docker** | Docker Desktop (macOS/Windows) o Docker Engine 24+ con Compose v2 (Linux). |
 | **Disco** | ~10 GB libres para la imagen y los volúmenes. |
 | **Memoria** | 4 GB de RAM recomendados para el contenedor (escritorio + navegador). |
 | **Puertos del host** | `6080` (noVNC), `5902` (VNC), `2222` (SSH) — todos configurables. |
 
-> x86_64 **no** está soportado por defecto. Consulta la [Hoja de ruta](#hoja-de-ruta)
-> para los planes multi-arquitectura.
+> Todo se ejecuta dentro del contenedor (Linux), así que el **SO del host puede ser macOS,
+> Linux o Windows**. Los scripts del contenedor son solo Linux y nunca se ejecutan en el host.
+
+---
+
+## Multiplataforma
+
+Como el escritorio se ejecuta dentro de un contenedor Linux, las **únicas** piezas del lado
+del host son el instalador y Docker. Eso significa que el mismo contenedor funciona en
+cualquier sistema que pueda ejecutar Docker, con un matiz: la imagen es **arm64**, así que
+en hosts Intel/AMD (x86_64) se ejecuta bajo **emulación QEMU** (más lenta, pero totalmente
+funcional).
+
+| Sistema host | Comando de instalación | Notas |
+|---|---|---|
+| **macOS** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | Nativo en Apple Silicon; emulado en Intel. |
+| **Linux (arm64)** | el mismo `curl … \| bash` | Nativo; mejor rendimiento. |
+| **Linux (x86_64)** | el mismo `curl … \| bash` | Emulado; instala primero la ayuda: `sudo apt-get install qemu-user-static binfmt-support`. |
+| **Windows (PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Shell nativo; Docker Desktop emula arm64. No necesita `make`. |
+| **Windows (WSL2 / Git Bash)** | el mismo `curl … \| bash` | Si ya usas WSL2 o Git Bash; requiere `make`. |
+
+Los instaladores bash (`install.sh`) y PowerShell (`install.ps1`) hacen lo mismo:
+comprobar requisitos, clonar el repo, crear el `.env` y construir + arrancar el contenedor.
+Detectan tu arquitectura y solo **avisan** en no-arm64 (emulación), nunca fallan, así que
+el mismo contenedor funciona en todas las plataformas.
+
+> Los scripts del contenedor (`scripts/*.sh`, `scripts/entrypoint.sh`, `scripts/session.sh`,
+> `scripts/dev`) se ejecutan **dentro del contenedor Linux**, por eso funcionan igual
+> independientemente del SO del host. Un `.gitattributes` fuerza finales de línea LF para
+> que clonar o editar desde Windows nunca los rompa con CRLF.
 
 ---
 
@@ -107,12 +137,20 @@ Todo se orquesta con un solo `make install`.
 
 ### Opción A — Instalación en una línea (recomendada)
 
+**macOS y Linux** (shell nativo):
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh | bash
 ```
 
-El instalador comprueba el sistema (arm64 + Docker), clona el repositorio en
-`./ubuntu-arm-docker`, crea el `.env` y ejecuta `make install`.
+**Windows** (PowerShell — no requiere `make`):
+
+```powershell
+irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 | iex
+```
+
+El instalador comprueba el sistema (arquitectura + Docker), clona el repositorio en
+`./ubuntu-arm-docker`, crea el `.env` y construye + arranca el contenedor.
 
 Variantes útiles:
 
