@@ -49,12 +49,13 @@ jobs:
 
       - name: Validate Python helpers
         run: |
+          export PYTHONPYCACHEPREFIX=/tmp/ci-pycache
           python3 -m py_compile scripts/wdctl.py
           echo "wdctl.py syntax OK"
 
       - name: Installers must be LF (no CRLF — breaks bash/PowerShell on Windows)
         run: |
-          ! grep -rlP '\r$' install.sh install.ps1 scripts/ Makefile && echo "LF OK"
+          ! grep -rlP '\r$' install.sh install.ps1 Makefile scripts/*.sh scripts/assistant scripts/wdctl.py && echo "LF OK"
 
       - name: Installers --help exit cleanly
         run: |
