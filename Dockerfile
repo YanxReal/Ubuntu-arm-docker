@@ -142,6 +142,10 @@ RUN set -eux; \
       > /etc/apt/sources.list.d/helium.list; \
     apt-get update; \
     apt-get install -y --no-install-recommends helium-bin; \
+    # Helium bruto dentro del contenedor sin user namespaces -> no-sandbox por defecto
+    sed -i 's|exec "$HERE/helium" "$@"|exec "$HERE/helium" --no-sandbox "$@"|' /opt/helium/helium-wrapper; \
+    grep -q -- '--no-sandbox' /opt/helium/helium-wrapper; \
+    sed -i 's|^Exec=helium|Exec=helium --no-sandbox|' /usr/share/applications/helium.desktop; \
     rm -rf /var/lib/apt/lists/*; \
     ls -la /usr/share/applications | grep -i helium || true
 
