@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resize; handshake VNC OK desde el host).
 - **AI con ojos y manos reales**: `assistant shot/ocr` (captura X11 real, 1920×1080 multi-
   color) y `assistant move/click/type` vía **xdotool** sobre el escritorio.
+- **Control de ventanas**: `assistant windows` (lista ventanas) y `assistant winmove X Y`
+  mueve una ventana de forma fiable vía el WM (`xdotool windowmove`; el drag de puntero no
+  mueve ventanas en muffin).
 - `assistant` deja de usar VNC/vncdotool; `waydriver-mcp` se mantiene para probar apps GTK
   aisladas.
 

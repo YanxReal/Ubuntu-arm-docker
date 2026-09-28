@@ -28,7 +28,10 @@
 #                                       AT-SPI en una sesión Mutter aislada
 #   assistant type "texto"           -> intenta escribir (limitado en headless)
 #   assistant key ctrl+c|super...    -> intenta atajo (limitado en headless)
-#   assistant click X Y / move X Y   -> intenta puntero (limitado en headless)
+#   assistant click X Y / move X Y   -> puntero (X11 real)
+#   assistant drag DX DY             -> arrastre del puntero (selección)
+#   assistant windows                -> lista ventanas (activa * )
+#   assistant winmove X Y [wid]      -> MUEVE una ventana (fiable; usa el WM)
 #
 set -euo pipefail
 
@@ -159,6 +162,28 @@ cmd_drag() {
     && echo "ok drag" || return 1
 }
 
+# ── ventanas (listar / mover ventana de forma fiable) ─────────────────────
+cmd_windows() {
+  have_x || die "sin sesión X."; xneed xdotool || die "falta xdotool."
+  local active="$(xdotool getactivewindow 2>/dev/null)"
+  xdotool search --onlyvisible --name ".*" 2>/dev/null | while read -r id; do
+    local name geo p
+    name="$(xdotool getwindowname "$id" 2>/dev/null)"
+    p="$(xdotool getwindowgeometry "$id" 2>/dev/null | grep -i position | awk '{print $2}')"
+    geo="$(xdotool getwindowgeometry "$id" 2>/dev/null | grep -i geometry | awk '{print $2}')"
+    [ -n "${name}" ] && printf "  %s  %s  %s  x%s\n" "$([ "$id" = "$active" ] && echo '*' || echo ' ')" "$id" "${name}" "${p} ${geo}"
+  done
+}
+
+cmd_winmove() {
+  have_x || die "sin sesión X."; xneed xdotool || die "falta xdotool."
+  local x="${1:?Uso: assistant winmove <x> <y> [window_id]}" y="${2:?}"
+  local wid="${3:-$(xdotool getactivewindow 2>/dev/null)}"
+  [ -n "${wid}" ] || die "no hay ventana activa."
+  xdotool windowmove --sync "${wid}" "${x}" "${y}" >/dev/null 2>&1 \
+    && echo "ok ventana ${wid} movida a (${x},${y})" || return 1
+}
+
 # ── dispatch ───────────────────────────────────────────────────────────────
 case "${1:-help}" in
   status)   cmd_status ;;
@@ -174,6 +199,8 @@ case "${1:-help}" in
   rclick)   cmd_rclick "${2:-}" "${3:-}" ;;
   move)     cmd_move "${2:-}" "${3:-}" ;;
   drag)     cmd_drag "${2:-}" "${3:-}" ;;
+  windows)  cmd_windows ;;
+  winmove)  cmd_winmove "${2:-}" "${3:-}" "${4:-}" ;;
   help|-h|--help) cmd_help ;;
   *) echo "Subcomando desconocido: $1" >&2; cmd_help >&2; exit 1 ;;
 esac
