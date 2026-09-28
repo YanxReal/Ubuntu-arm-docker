@@ -11,9 +11,8 @@ gsettings set org.cinnamon.screensaver idle-activation-enabled false || true
 gsettings set org.cinnamon.desktop.interface enable-animations false || true
 gsettings set org.cinnamon.desktop.interface color-scheme 'prefer-dark' || true
 
-# --- Compositor off (Xvfb no tiene GL). Best-effort ------------------------
-command -v dconf >/dev/null 2>&1 && \
-  dconf write /org/cinnamon/desktop/wm/preferences/compositing-enabled false 2>/dev/null || true
+# Compose en vivo (ventanas se mueven en tiempo real). Con llvmpipe (GL software)
+# el compositor de muffin funciona en Xvfb; si fallara, muffin degrada a recuadro.
 
 # --- Navegador por defecto: Helium ------------------------------------------
 HELIUM_DESKTOP="$(ls /usr/share/applications 2>/dev/null | grep -i '^helium.*\.desktop$' | head -n1)"

@@ -51,7 +51,7 @@ start_cinnamon() {
     DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME}/bus" \
     XDG_SESSION_ID=1 XDG_SESSION_CLASS=user XDG_SESSION_TYPE=x11 \
     XDG_SEAT=seat0 XDG_CURRENT_DESKTOP=Cinnamon \
-    CINNAMON_DISABLE_COMPOSITING=1 \
+    LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe \
     cinnamon-session --session cinnamon >/dev/null 2>&1 &
   CINN_PID=$!
 }

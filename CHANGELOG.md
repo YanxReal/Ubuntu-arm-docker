@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Control de ventanas**: `assistant windows` (lista ventanas) y `assistant winmove X Y`
   mueve una ventana de forma fiable vía el WM (`xdotool windowmove`; el drag de puntero no
   mueve ventanas en muffin).
+- **Compositor de Cinnamon activado** (con render por software llvmpipe): las ventanas se
+  mueven **en tiempo real** al arrastrarlas, en vez del recuadro de contorno que salía al
+  tener el compositing desactivado por los problemas de GL en Xvfb.
 - `assistant` deja de usar VNC/vncdotool; `waydriver-mcp` se mantiene para probar apps GTK
   aisladas.
 
