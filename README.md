@@ -237,6 +237,23 @@ ssh admin@localhost -p 2222 'assistant shot /tmp/s.png'
 | `assistant ocr [png]` | OCR de una captura (tesseract, spa+eng) |
 | `assistant open <app>` / `run <cmd>` | Lanza apps/comandos en la sesión gráfica |
 | `assistant status` | Estado y herramientas disponibles |
+| `assistant wd run --app <cmd> --shot out.png` | **Control headless de apps GTK** (WayDriver): sesión Mutter aislada, **captura PNG real** y operación por AT-SPI |
+
+**`assistant wd` (WayDriver) — ojos y manos reales:** como la captura del compositor headless
+es limitada, este contenedor integra **[WayDriver](https://waydriver.io)** para que la IA pruebe y
+controle **apps GTK4** (Helium, calculadora, tus apps Tauri) en una sesión `Mutter --headless`
+aislada, con **captura PNG real** (PipeWire mantiene el ScreenCast vivo → Mutter compone) e
+**input real** (RemoteDesktop) + AT-SPI:
+
+```bash
+# Captura real de una app GTK + clic por XPath, todo por SSH
+ssh admin@localhost -p 2222 'assistant wd run --app gnome-calculator --click "//Button[@name=\"7\"]" --shot /tmp/calc.png'
+make assistant ARGS="wd run --app helium --shot /tmp/web.png --sleep 4"
+```
+
+`wdctl` admite: `--shot <out.png>`, `--xml` (árbol AT-SPI), `--text <xpath>`, `--read <xpath>`,
+`--click <xpath>` / `--click-text "<label>"`, `--set-text <xpath> <value>`, `--press <keysym>`,
+`--sleep <seg>`. Cada invocación abre una sesión Mother aislada (apps en sandbox headless).
 
 **Sobre el input GUI:** en este entorno *headless* Wayland los protocolos de teclado
 virtual y screencopy no están expuestos y GRD VNC corre en `view-only`, así que **el

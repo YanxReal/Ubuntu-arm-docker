@@ -263,7 +263,25 @@ RUN set -eux; \
     command -v grim; command -v wtype; command -v ydotool; command -v tesseract
 
 # ---------------------------------------------------------------------------
-# 13) Scripts de arranque
+# 13) WayDriver — control headless de apps GTK (GNOME/Mutter) para la IA
+#     waydriver-mcp: lanza una sesión Mutter aislada, captura PNG real por
+#     PipeWire (mantiene el scrEcast vivo -> Mutter compone) y opera la app
+#     por AT-SPI + input real (RemoteDesktop).
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        mutter at-spi2-core \
+        libglib2.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+        gstreamer1.0-pipewire libpipewire-0.3-dev \
+    ; \
+    rm -rf /var/lib/apt/lists/*; \
+    cargo install waydriver-mcp --locked; \
+    rm -rf /usr/local/cargo/registry /usr/local/cargo/git; \
+    test -x /usr/local/cargo/bin/waydriver-mcp
+
+# ---------------------------------------------------------------------------
+# 14) Scripts de arranque
 # ---------------------------------------------------------------------------
 COPY scripts/ /usr/local/bin/
 RUN set -eux; \

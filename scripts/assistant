@@ -23,6 +23,9 @@
 #   assistant ocr [png]              -> OCR de una captura (tesseract)
 #   assistant open <app>             -> lanza un app en la sesión (dev)
 #   assistant run <cmd...>           -> ejecuta un comando en la sesión
+#   assistant wd run --app <cmd>...  -> control headless de apps GTK (WayDriver):
+#                                       captura PNG real + click/type/read por
+#                                       AT-SPI en una sesión Mutter aislada
 #   assistant type "texto"           -> intenta escribir (limitado en headless)
 #   assistant key ctrl+c|super...    -> intenta atajo (limitado en headless)
 #   assistant click X Y / move X Y   -> intenta puntero (limitado en headless)
@@ -147,6 +150,7 @@ case "${1:-help}" in
   ocr)      cmd_ocr "${2:-}" ;;
   open)     shift; cmd_open "$@" ;;
   run)      shift; cmd_run "$@" ;;
+  wd)       shift; exec wdctl.py "$@" ;;
   type)     cmd_type "${2:-}" ;;
   key)      cmd_key "${2:-}" ;;
   click)    cmd_click "${2:-}" "${3:-}" ;;

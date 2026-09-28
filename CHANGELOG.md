@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/assistant`: control de escritorio para agentes/IA — capturas por VNC
   (`shot`/`region`), OCR (`ocr`), lanzar apps/comandos (`open`/`run`), estado y la
   herramienta `make assistant`.
+- `scripts/wdctl.py` + **WayDriver**: control headless de apps GTK en una sesión
+  `Mutter --headless` aislada, con **captura PNG real** (PipeWire ScreenCast vivo),
+  input real (RemoteDesktop) y AT-SPI (`click`/`set_text`/`read_text` por XPath).
+  Expuesto como `assistant wd run --app <cmd> --shot out.png …`.
+- `waydriver-mcp` (build Rust) y deps (`mutter`, `at-spi2-core`, dev de GStreamer).
 - `vncdotool`, `grim`, `wtype`, `ydotool`, `tesseract-ocr` y `python3-pil` en la imagen.
 - `install.ps1`: native Windows PowerShell installer (`irm … \| iex`) with no `make`
   dependency; mirrors `install.sh` (checks, clone, `.env`, build, start, access info).
@@ -31,9 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- El input GUI (teclear/click en apps) es **limitado** en este entorno headless: Wayland
-  no expone los protocolos virtual-keyboard/screencopy y GRD VNC corre en view-only.
-  El control lo dan de forma robusta las capturas + `assistant open/run` + OCR.
+- El input GUI sobre el **escritorio vivo** sigue limitado en headless (Wayland no expone
+  virtual-keyboard/screencopy y GRD VNC va en view-only). Para **control GUI real** (captura
+  + input) sobre apps GTK, usa **`assistant wd`** (WayDriver) en sesiones Mutter aisladas.
 
 ## [1.0.0] - 2026-09-26
 

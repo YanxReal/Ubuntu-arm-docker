@@ -47,6 +47,11 @@ jobs:
             "install.ps1 syntax OK"
           '
 
+      - name: Validate Python helpers
+        run: |
+          python3 -m py_compile scripts/wdctl.py
+          echo "wdctl.py syntax OK"
+
       - name: Installers must be LF (no CRLF — breaks bash/PowerShell on Windows)
         run: |
           ! grep -rlP '\r$' install.sh install.ps1 scripts/ Makefile && echo "LF OK"
