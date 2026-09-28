@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Quitado el shim `fd-guard`**: era la causa de un bucle del daemon GRD a ~95% CPU en
+  reposo que **bloqueaba las conexiones VNC/noVNC** (nunca completaban el handshake).
+  Sin él, y conservando solo el parche `dup()`, GRD queda a ~0% en reposo y VNC/noVNC
+  conectan y responden correctamente (validado el handshake desde el host).
 - GRD se compila con **VNC multi-cliente** (`max_global_connections` ≥ 2): el agente puede
   capturar frames por VNC mientras tú sigues mirando por noVNC/VNC (ya no "1 a la vez").
 - `install.sh` is now portable: runs on Windows (Git Bash / MSYS2 / WSL) and warns
@@ -48,10 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full desktop experience: top panel, Ubuntu Dock, Yaru theme, Nautilus, GNOME Terminal,
   Text Editor, Calculator, System Monitor, desktop icons (DING) and more.
 - VNC access through **GNOME Remote Desktop 50.2 compiled from source with the VNC
-  backend** (Ubuntu ships RDP-only), including:
-  - a `dup()` patch to prevent a double close of the client socket shared with GLib;
-  - `scripts/fd-guard.c`, an `LD_PRELOAD` shim that keeps fd 0 valid so the VNC listener
-    is never closed by stray `close(0)` calls.
+  backend** (Ubuntu ships RDP-only), including a `dup()` patch to prevent a double close
+  of the client socket shared with GLib.
 - **noVNC + websockify** web access on port `6080` and native VNC on `5900`.
 - **OpenSSH server** with password authentication and passwordless `sudo` for `admin`.
 - **Helium** browser installed from the official APT repository and set as default.

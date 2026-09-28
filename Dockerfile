@@ -291,9 +291,7 @@ COPY scripts/ /usr/local/bin/
 RUN set -eux; \
     chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/session.sh \
              /usr/local/bin/desktop-setup.sh /usr/local/bin/dev; \
-    install -d -m 0755 -o "${USERNAME}" -g "${USER_GID}" /workspace; \
-    gcc -shared -fPIC -O2 -o /usr/local/lib/fd-guard.so /usr/local/bin/fd-guard.c -ldl; \
-    rm -f /usr/local/bin/fd-guard.c
+    install -d -m 0755 -o "${USERNAME}" -g "${USER_GID}" /workspace
 
 WORKDIR /workspace
 EXPOSE 6080 5900

@@ -56,7 +56,7 @@ make reload       # full recreate after changes
 │   ├── session.sh          # pipewire + gnome-shell headless + GRD + watchdog
 │   ├── desktop-setup.sh    # GNOME defaults (dock, browser, locking)
 │   ├── dev                 # GUI wrapper for the graphical session
-│   └── fd-guard.c          # LD_PRELOAD shim that protects fd 0
+│   └── assistant           # AI control (captures, OCR, open/run, wd/WayDriver)
 ├── workspace/              # Bind-mounted source code (/workspace)
 ├── README.md               # English documentation (primary)
 └── README.es.md            # Spanish documentation (kept in sync)

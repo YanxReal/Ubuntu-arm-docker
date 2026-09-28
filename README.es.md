@@ -75,8 +75,8 @@ Todo se orquesta con un solo `make install`.
   panel, Dock de Ubuntu, Nautilus, GNOME Terminal, Text Editor, Calculadora, Monitor del
   Sistema, Archivos, iconos de escritorio (DING), tema Yaru y más.
 - **GNOME Remote Desktop 50.2 compilado desde fuente con el backend VNC** (Ubuntu solo
-  empaqueta RDP en esta versión), más un pequeño parche `dup()` y un interceptor
-  `fd-guard.so` vía `LD_PRELOAD` que mantienen estable el listener VNC en contenedores.
+  empaqueta RDP en esta versión), más un pequeño parche `dup()` que mantiene estable el
+  socket VNC en contenedores (sin bucle: GRD queda a ~0% CPU en reposo).
 - **noVNC + websockify** en el puerto `6080` y VNC nativo en el puerto `5900`
   (publicado en el host como `5902` por defecto).
 - **Servidor OpenSSH** con autenticación por contraseña, con control total de la shell.
@@ -298,11 +298,10 @@ control robusto es por capturas + `open`/`run` + OCR**, no clicando dentro de la
   donde vive la interfaz del shell (panel, dock, apps). Por eso el stream muestra el
   escritorio completo y no un fondo vacío.
 - **GNOME Remote Desktop de Ubuntu es solo RDP**, así que la imagen compila la versión
-  upstream **50.2** con `-Dvnc=true`. Se aplican dos ajustes específicos de contenedor:
+  upstream **50.2** con `-Dvnc=true`. Se aplica un ajuste específico de contenedor:
   - un parche `dup()` en `grd-session-vnc.c` para evitar el doble cierre del socket del
-    cliente que comparte con GLib;
-  - `scripts/fd-guard.c`, un interceptor `LD_PRELOAD` que mantiene válido el descriptor
-    0 y evita que el listener VNC lo herede y sea cerrado por llamadas `close(0)`.
+    cliente que comparte con GLib (esto también mantiene GRD a ~0% CPU en reposo, en vez
+    del bucle por `fd 0` que bloqueaba VNC/noVNC).
 - **Resiliencia.** `session.sh` supervisa el daemon VNC: si el puerto desaparece o el
   daemon sale, se reinicia automáticamente; el log está en
   `/run/user/1000/grd-daemon.log`.
