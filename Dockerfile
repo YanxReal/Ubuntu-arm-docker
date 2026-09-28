@@ -167,6 +167,10 @@ RUN set -eux; \
     sed -i 's|grd_throttler_limits_set_max_global_connections (limits, 1);|grd_throttler_limits_set_max_global_connections (limits, 4);|' src/grd-vnc-server.c; \
     grep -q "max_global_connections (limits, 4)" src/grd-vnc-server.c; \
     # (neverShared se mantiene TRUE: cada conexión es su propia screen en modo inetd)
+    # Fix crasheo al inyectar input: la tabla de formatos no incluye RGBA (usado
+    # por el stream de screencast con metadata de cursor). Se añade la entrada.
+    sed -i 's|  { SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888, 4 },|  { SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888, 4 },\n  { SPA_VIDEO_FORMAT_RGBA, DRM_FORMAT_ABGR8888, 4 },|' src/grd-pipewire-utils.c; \
+    grep -q "SPA_VIDEO_FORMAT_RGBA" src/grd-pipewire-utils.c; \
     meson setup build --prefix=/usr --buildtype=release \
         -Drdp=false -Dvnc=true -Dsystemd=false -Dman=false -Dtests=false; \
     ninja -C build; \
