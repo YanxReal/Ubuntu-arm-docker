@@ -108,16 +108,18 @@ Everything is orchestrated with a single `make install`.
 
 Because the desktop itself runs inside a Linux container, the **only** host-side pieces
 are the installer and Docker. That means the same container works on any OS that can run
-Docker, with one caveat: the image is **arm64**, so on Intel/AMD (x86_64) hosts it runs
-under **QEMU emulation** (slower, but fully functional).
+Docker. The image is **arm64**: on **ARM hosts it is fully native** (best case), and on
+Intel/AMD (x86_64) hosts it runs under **QEMU emulation** (slower, but fully functional).
 
 | Host OS | Install command | Notes |
 |---|---|---|
-| **macOS** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | Native on Apple Silicon; emulated on Intel. |
-| **Linux (arm64)** | same `curl … \| bash` | Native; best performance. |
+| **macOS (Apple Silicon)** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | **Native.** Zero emulation. |
+| **macOS (Intel)** | same `curl … \| bash` | Emulated (QEMU). |
+| **Linux ARM** (Raspberry Pi 4/5, Graviton, etc.) | same `curl … \| bash` | **Native** — best performance. |
 | **Linux (x86_64)** | same `curl … \| bash` | Emulated; enable helper first: `sudo apt-get install qemu-user-static binfmt-support`. |
-| **Windows (PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Native shell; Docker Desktop emulates arm64. No `make` needed. |
-| **Windows (WSL2 / Git Bash)** | same `curl … \| bash` | If you already use WSL2 or Git Bash; requires `make`. |
+| **Windows ARM** (Windows 11 ARM, e.g. Snapdragon X) | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | **Native.** Docker Desktop + WSL2 (arm64 backend). No `make` needed. |
+| **Windows (x86_64, PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Emulated (QEMU) via Docker Desktop. No `make` needed. |
+| **Windows (WSL2 / Git Bash)** | same `curl … \| bash` | Native on an ARM WSL2 distro; emulated on x86_64. Requires `make`. |
 
 The bash (`install.sh`) and PowerShell (`install.ps1`) installers do the same job —
 check requirements, clone the repo, create `.env`, and build + start the container.

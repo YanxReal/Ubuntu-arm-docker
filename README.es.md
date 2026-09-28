@@ -109,17 +109,19 @@ Todo se orquesta con un solo `make install`.
 
 Como el escritorio se ejecuta dentro de un contenedor Linux, las **únicas** piezas del lado
 del host son el instalador y Docker. Eso significa que el mismo contenedor funciona en
-cualquier sistema que pueda ejecutar Docker, con un matiz: la imagen es **arm64**, así que
-en hosts Intel/AMD (x86_64) se ejecuta bajo **emulación QEMU** (más lenta, pero totalmente
-funcional).
+cualquier sistema que pueda ejecutar Docker. La imagen es **arm64**: en hosts **ARM es
+totalmente nativa** (mejor caso), y en hosts Intel/AMD (x86_64) se ejecuta bajo **emulación
+QEMU** (más lenta, pero totalmente funcional).
 
 | Sistema host | Comando de instalación | Notas |
 |---|---|---|
-| **macOS** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | Nativo en Apple Silicon; emulado en Intel. |
-| **Linux (arm64)** | el mismo `curl … \| bash` | Nativo; mejor rendimiento. |
+| **macOS (Apple Silicon)** | `curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh \| bash` | **Nativo.** Cero emulación. |
+| **macOS (Intel)** | el mismo `curl … \| bash` | Emulado (QEMU). |
+| **Linux ARM** (Raspberry Pi 4/5, Graviton, etc.) | el mismo `curl … \| bash` | **Nativo** — mejor rendimiento. |
 | **Linux (x86_64)** | el mismo `curl … \| bash` | Emulado; instala primero la ayuda: `sudo apt-get install qemu-user-static binfmt-support`. |
-| **Windows (PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Shell nativo; Docker Desktop emula arm64. No necesita `make`. |
-| **Windows (WSL2 / Git Bash)** | el mismo `curl … \| bash` | Si ya usas WSL2 o Git Bash; requiere `make`. |
+| **Windows ARM** (Windows 11 ARM, p. ej. Snapdragon X) | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | **Nativo.** Docker Desktop + WSL2 (backend arm64). No necesita `make`. |
+| **Windows (x86_64, PowerShell)** | `irm https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.ps1 \| iex` | Emulado (QEMU) vía Docker Desktop. No necesita `make`. |
+| **Windows (WSL2 / Git Bash)** | el mismo `curl … \| bash` | Nativo con una distro WSL2 ARM; emulado en x86_64. Requiere `make`. |
 
 Los instaladores bash (`install.sh`) y PowerShell (`install.ps1`) hacen lo mismo:
 comprobar requisitos, clonar el repo, crear el `.env` y construir + arrancar el contenedor.
