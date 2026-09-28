@@ -103,10 +103,12 @@ start_grd() {
   log "iniciando ${GRD_BIN} --headless (log: ${GRD_LOG})"
   echo "=== $(date -Is) iniciando daemon VNC ===" >>"${GRD_LOG}"
   gsettings set org.gnome.desktop.remote-desktop.vnc.headless enable true >>"${GRD_LOG}" 2>&1 || true
-  # Sin shim fd-guard: provocaba un bucle idle al ~95% CPU que rompía VNC/noVNC.
-  # El parche dup() en grd-session-vnc.c basta para el socket; el daemon queda
-  # a ~0% en reposo y el handshake VNC/noVNC responde normal.
-  "${GRD_BIN}" --headless </dev/null >>"${GRD_LOG}" 2>&1 &
+  # Modo "extend" (monitor virtual): sin él GRD gira a ~95% en reposo buscando
+  # grabar un monitor primario inexistente en headless; con extend queda a ~0.4%.
+  gsettings set org.gnome.desktop.remote-desktop.vnc screen-share-mode extend >>"${GRD_LOG}" 2>&1 || true
+  # El wrapper grd-headless mantiene fd0 como socketpair (peer vivo): evita EBADF
+  # por reuso de fd0 (caían conexiones) sin el bucle idle de un pipe (POLLHUP).
+  /usr/local/bin/grd-headless --headless >>"${GRD_LOG}" 2>&1 &
   GRD_PID=$!
   local i
   for i in $(seq 1 30); do

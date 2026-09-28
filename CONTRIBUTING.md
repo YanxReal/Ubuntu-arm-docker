@@ -57,6 +57,7 @@ make reload       # full recreate after changes
 │   ├── desktop-setup.sh    # GNOME defaults (dock, browser, locking)
 │   ├── dev                 # GUI wrapper for the graphical session
 │   └── assistant           # AI control (captures, OCR, open/run, wd/WayDriver)
+│   └── grd-headless        # GRD wrapper (fd0=socketpair) for stable VNC
 ├── workspace/              # Bind-mounted source code (/workspace)
 ├── README.md               # English documentation (primary)
 └── README.es.md            # Spanish documentation (kept in sync)

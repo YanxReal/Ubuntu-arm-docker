@@ -298,10 +298,12 @@ control robusto es por capturas + `open`/`run` + OCR**, no clicando dentro de la
   donde vive la interfaz del shell (panel, dock, apps). Por eso el stream muestra el
   escritorio completo y no un fondo vacío.
 - **GNOME Remote Desktop de Ubuntu es solo RDP**, así que la imagen compila la versión
-  upstream **50.2** con `-Dvnc=true`. Se aplica un ajuste específico de contenedor:
+  upstream **50.2** con `-Dvnc=true`. Ajustes específicos de contenedor:
   - un parche `dup()` en `grd-session-vnc.c` para evitar el doble cierre del socket del
-    cliente que comparte con GLib (esto también mantiene GRD a ~0% CPU en reposo, en vez
-    del bucle por `fd 0` que bloqueaba VNC/noVNC).
+    cliente que comparte con GLib;
+  - el wrapper `grd-headless` mantiene fd 0 como una socketpair abierta (sin EBADF que
+    tumbaba las conexiones ni bucle idle), y `session.sh` fuerza `screen-share-mode=extend`
+    (monitor virtual).
 - **Resiliencia.** `session.sh` supervisa el daemon VNC: si el puerto desaparece o el
   daemon sale, se reinicia automáticamente; el log está en
   `/run/user/1000/grd-daemon.log`.

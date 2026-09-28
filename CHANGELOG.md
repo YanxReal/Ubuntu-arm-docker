@@ -27,10 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Quitado el shim `fd-guard`**: era la causa de un bucle del daemon GRD a ~95% CPU en
-  reposo que **bloqueaba las conexiones VNC/noVNC** (nunca completaban el handshake).
-  Sin él, y conservando solo el parche `dup()`, GRD queda a ~0% en reposo y VNC/noVNC
-  conectan y responden correctamente (validado el handshake desde el host).
+- **VNC/noVNC estables**: quitado el shim `fd-guard` y añadido el wrapper
+  `scripts/grd-headless`, que mantiene fd 0 como una socketpair (peer vivo). Esto
+  elimina el **EBADF por reuso de fd 0** que hacía caer las conexiones VNC/noVNC
+  (y con resize), y evita el bucle idle de un pipe (POLLHUP). `session.sh` fija
+  `screen-share-mode=extend` (monitor virtual) antes de lanzar GRD. Resultado: el
+  handshake VNC responde desde el host y las conexiones aguantan cambios de tamaño.
 - GRD se compila con **VNC multi-cliente** (`max_global_connections` ≥ 2): el agente puede
   capturar frames por VNC mientras tú sigues mirando por noVNC/VNC (ya no "1 a la vez").
 - `install.sh` is now portable: runs on Windows (Git Bash / MSYS2 / WSL) and warns

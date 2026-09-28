@@ -295,10 +295,12 @@ control robusto es por capturas + `open`/`run` + OCR**, no por clicar dentro de 
   connects, which is where the shell UI (panel, dock, apps) lives. This is why the
   stream shows the full desktop instead of a bare background.
 - **Ubuntu's GNOME Remote Desktop is RDP-only**, so the image compiles upstream
-  **50.2** with `-Dvnc=true`. One container-specific hardening touch is applied:
+  **50.2** with `-Dvnc=true`. Container hardening applied:
   - a `dup()` patch in `grd-session-vnc.c` to avoid a double-close of the client
-    socket shared with GLib (this also keeps GRD at ~0% CPU when idle, instead of
-    the fd-0 busy-loop that stalled VNC/noVNC).
+    socket shared with GLib;
+  - the `grd-headless` wrapper keeps fd 0 as an open socketpair (no EBADF that
+    dropped connections, no idle busy-loop), and `session.sh` forces
+    `screen-share-mode=extend` (virtual monitor).
 - **Resilience.** `session.sh` supervises the VNC daemon: if the port disappears or
   the daemon exits, it is restarted automatically; the log lives in
   `/run/user/1000/grd-daemon.log`.
