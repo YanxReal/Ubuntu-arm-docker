@@ -93,22 +93,6 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
-# 4b) GNOME 50 (SECUNDARIO / opcional — se instala pero NO es el default)
-#     El principal es Cinnamon (paso 4). GNOME 50 es Wayland-only y corre por
-#     sesión propia si se elige; session.sh arranca Cinnamon (X11/x11vnc).
-# ---------------------------------------------------------------------------
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        gnome-shell ubuntu-session gnome-session-bin \
-        gnome-settings-daemon gnome-shell-extension-ubuntu-dock \
-        xwayland pipewire pipewire-pulse pipewire-bin wireplumber \
-        xdg-desktop-portal-gnome xdg-desktop-portal-gtk \
-        language-pack-gnome-es \
-    ; \
-    rm -rf /var/lib/apt/lists/*
-
-# ---------------------------------------------------------------------------
 # 5) Apps GNOME extra (se saltan las que no existan en esta versión)
 # ---------------------------------------------------------------------------
 RUN set -eux; \

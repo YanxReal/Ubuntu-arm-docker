@@ -43,8 +43,7 @@
 
 ## Overview
 
-This project packages a **Cinnamon desktop** (with GNOME 50 available as a secondary
-session) into a single Docker image for arm64 hosts
+This project packages a **Cinnamon desktop** into a single Docker image for arm64 hosts
 (Apple Silicon, ARM servers, and other `linux/arm64` machines). It was designed for
 developers who want a clean, disposable Linux desktop for building and testing
 **Tauri v2** applications, browsing with **Helium**, or simply experimenting with
@@ -58,7 +57,7 @@ Everything is orchestrated with a single `make install`.
 |---|---|
 | ⚡ **One-line install** | `curl … install.sh \| bash` (macOS/Linux) or `irm … install.ps1 \| iex` (Windows) |
 | 🪟 **Cross-platform** | Same container on macOS, Linux & Windows (PowerShell) |
-| 🖥️ **Cinnamon desktop** | Primary on X11 (stable VNC); GNOME 50 secondary session |
+| 🖥️ **Cinnamon desktop** | Primary on X11 (stable VNC/remote) |
 | 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
 | 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
 | 🧭 **Helium browser** | Default browser, installed from the official APT repository |
@@ -282,7 +281,6 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
 │   │   dbus (system + session)                                                 │             │
 │   │   sshd (port 22)                                                          │             │
 │   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                       │             │
-│   │   GNOME 50 (secundario, Wayland-only, instalado)                           │             │
 │   │   session.sh watchdog ── restarts Xvfb/Cinnamon/x11vnc if they exit        │             │
 │   │                                                                          │             │
 │   └──────────────────────────────────────────────────────────────────────────┘             │
@@ -299,8 +297,9 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
   headless with GNOME Remote Desktop (GRD) — it dropped VNC/noVNC connections and served a
   gray framebuffer in the container. Moving the primary desktop to **X11 (Cinnamon)** made
   remote access and control robust. GRD and its shims were removed.
-- **GNOME 50 is still installed, but as a secondary/optional session** (Wayland-only). The
-  default session started by `session.sh` is Cinnamon on X11.
+- **GNOME was removed entirely.** The container is **Cinnamon-only** (X11); the Wayland
+  headless (GNOME) path and its GRD/session internals were dropped because they were fragile
+  and did not serve remote access in this container.
 - **Resilience.** `session.sh` supervises Xvfb, Cinnamon and x11vnc and restarts whichever
   exits (up to 20 times), logging to `/run/user/1000/session.log`.
 

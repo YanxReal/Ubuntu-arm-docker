@@ -43,8 +43,7 @@
 
 ## Descripción general
 
-Este proyecto empaqueta un escritorio **Cinnamon** (con GNOME 50 disponible como sesión
-secundaria) en una única imagen Docker para
+Este proyecto empaqueta un escritorio **Cinnamon** en una única imagen Docker para
 hosts arm64 (Apple Silicon, servidores ARM y otras máquinas `linux/arm64`). Está pensado
 para desarrolladores que quieren un escritorio Linux limpio y desechable para compilar y
 probar aplicaciones **Tauri v2**, navegar con **Helium** o simplemente experimentar con
@@ -58,7 +57,7 @@ Todo se orquesta con un solo `make install`.
 |---|---|
 | ⚡ **Instalación en una línea** | `curl … install.sh \| bash` (macOS/Linux) o `irm … install.ps1 \| iex` (Windows) |
 | 🪟 **Multiplataforma** | El mismo contenedor en macOS, Linux y Windows (PowerShell) |
-| 🖥️ **Escritorio Cinnamon** | Principal en X11 (VNC estable); GNOME 50 secundario |
+| 🖥️ **Escritorio Cinnamon** | Principal en X11 (VNC estable) |
 | 🌐 **Dos vías remotas** | noVNC en el navegador y VNC nativo (misma contraseña) |
 | 🔐 **Acceso SSH** | Usuario `admin` con `sudo` sin contraseña (equivalente a root) |
 | 🧭 **Navegador Helium** | Navegador por defecto, instalado desde su repositorio APT oficial |
@@ -282,7 +281,6 @@ mismo escritorio que ves. `assistant wd` añade pruebas de apps GTK aisladas ví
 │   │   dbus (sistema + sesión)                                                  │             │
 │   │   sshd (puerto 22)                                                         │             │
 │   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                        │             │
-│   │   GNOME 50 (secundario, solo Wayland, instalado)                            │             │
 │   │   vigilante session.sh ── reinicia Xvfb/Cinnamon/x11vnc si salen            │             │
 │   └──────────────────────────────────────────────────────────────────────────────┘             │
 └────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -298,8 +296,9 @@ mismo escritorio que ves. `assistant wd` añade pruebas de apps GTK aisladas ví
   headless con GNOME Remote Desktop (GRD) — caía conexiones y servía un framebuffer gris en
   el contenedor. Mover el escritorio principal a **X11 (Cinnamon)** hizo el remoto y el
   control robustos. Se eliminaron GRD y sus parches.
-- **GNOME 50 sigue instalado, pero como sesión secundaria/opcional** (solo Wayland). La
-  sesión por defecto que arranca `session.sh` es Cinnamon en X11.
+- **GNOME se eliminó por completo.** El contenedor es **solo Cinnamon** (X11); la vía Wayland
+  headless (GNOME) y sus internos de GRD se retiraron por ser frágiles y no servir el remoto
+  en este contenedor.
 - **Resiliencia.** `session.sh` supervisa Xvfb, Cinnamon y x11vnc y reinicia el que salga
   (hasta 20 veces), registrando en `/run/user/1000/session.log`.
 

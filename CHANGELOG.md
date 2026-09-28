@@ -9,15 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Escritorio: Cinnamon (X11) en vez de GNOME 50/Wayland.** Motivo: la sesión Wayland
+- **Escritorio: Cinnamon (X11) en vez de GNOME/Wayland.** Motivo: la sesión Wayland
   headless con GNOME Remote Desktop (GRD) era frágil en el contenedor (desconexiones
   VNC/noVNC, framebuffer gris, input limitado). Ahora el escritorio es **Cinnamon** (fork
   de GNOME 3, X11-native) corriendo sobre **Xvfb**, servido por **x11vnc** (VNC estable,
   `-forever -shared`) y controlado con **xdotool/import**.
-- **GNOME 50 queda instalado como escritorio secundario/opcional** (solo Wayland): la sesión
-  por defecto de `session.sh` es Cinnamon en X11.
+- **GNOME 50 se retiró por completo** del stack: el contenedor queda **solo Cinnamon (X11)**.
+  La vía Wayland headless (gnome-shell/GRD/RDP) no servía el remoto en arm64 y se eliminó.
 - La imagen se renombra a `ubuntu-desktop-cinnamon:26.04`; docs y scripts se alinean a
-  "Cinnamon principal + GNOME 50 secundario" (se elimina la referencia a GRD como base).
+  "solo Cinnamon" (se eliminan las referencias a GNOME/GRD como base).
 - Eliminado el build de **GNOME Remote Desktop** y sus parches (`dup()`, multi-cliente,
   RGBA) y los shims `fd-guard`/`grd-headless`. Ya no se usan.
 - **VNC/noVNC estables** (validado: conexión que aguanta 12 s y varios `SetDesktopSize`

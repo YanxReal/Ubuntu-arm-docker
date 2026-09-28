@@ -96,7 +96,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) where possib
 feat: add configurable virtual monitor size
 fix: restart VNC daemon when the port disappears
 docs: sync README.es.md with the English version
-build: pin Cinnamon/X11 stack or bump GNOME 50 (secondary)
+build: pin the Cinnamon/X11 stack
 chore: bump Node.js to 24
 ```
 
