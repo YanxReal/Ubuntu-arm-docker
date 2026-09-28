@@ -43,11 +43,12 @@
 
 ## Overview
 
-This project packages a full GNOME desktop into a single Docker image for arm64 hosts
+This project packages a **Cinnamon desktop** (with GNOME 50 available as a secondary
+session) into a single Docker image for arm64 hosts
 (Apple Silicon, ARM servers, and other `linux/arm64` machines). It was designed for
 developers who want a clean, disposable Linux desktop for building and testing
 **Tauri v2** applications, browsing with **Helium**, or simply experimenting with
-**Ubuntu 26.04 + GNOME 50** without touching their host system.
+**Ubuntu 26.04 + Cinnamon** without touching their host system.
 
 Everything is orchestrated with a single `make install`.
 
@@ -57,7 +58,7 @@ Everything is orchestrated with a single `make install`.
 |---|---|
 | ⚡ **One-line install** | `curl … install.sh \| bash` (macOS/Linux) or `irm … install.ps1 \| iex` (Windows) |
 | 🪟 **Cross-platform** | Same container on macOS, Linux & Windows (PowerShell) |
-| 🖥️ **Full GNOME 50 desktop** | Ubuntu Dock, top bar, GNOME apps, desktop icons |
+| 🖥️ **Cinnamon desktop** | Primary on X11 (stable VNC); GNOME 50 secondary session |
 | 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
 | 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
 | 🧭 **Helium browser** | Default browser, installed from the official APT repository |
@@ -199,8 +200,8 @@ Either way, `make install`:
 > In noVNC, press **Connect** and type the password. The first frame can take a couple
 > of seconds; move the pointer if the screen looks idle.
 
-> ⚠️ **One VNC client at a time.** GNOME Remote Desktop does not share a session:
-> disconnect noVNC or your VNC client before opening another one.
+> ℹ️ **Multi-client VNC.** `x11vnc` runs with `-shared`, so you can watch via noVNC
+> while another client (or the AI) is connected at the same time.
 
 ### SSH
 
@@ -215,8 +216,9 @@ ssh-copy-id -p 2222 admin@localhost   # optional: key-based access
 ## AI / Assistant Control
 
 The container is built so an AI agent (or automation) can **see and operate** the
-desktop without stealing your noVNC/VNC session. GRD is compiled with **multi-client VNC**
-(`max_global_connections ≥ 2`), so the agent grabs frames by VNC while you keep watching.
+desktop without stealing your noVNC/VNC session. Everything is **X11-based and stable**:
+capture is real (`import`/`scrot`) and input is injected with `xdotool`, so the agent can
+screenshot, click and type directly on the same desktop you see.
 
 Everything lives behind SSH (port `2222`) and a `make assistant` shortcut:
 
@@ -253,59 +255,54 @@ ssh admin@localhost -p 2222 'assistant wd run --app gnome-calculator --click "//
 make assistant ARGS="wd run --app helium --shot /tmp/web.png --sleep 4"
 ```
 
-`wdctl` admite: `--shot <out.png>`, `--xml` (árbol AT-SPI), `--text <xpath>`, `--read <xpath>`,
-`--click <xpath>` / `--click-text "<label>"`, `--set-text <xpath> <value>`, `--press <keysym>`,
-`--sleep <seg>`. Cada invocación abre una sesión Mother aislada (apps en sandbox headless).
+`wdctl` supports: `--shot <out.png>`, `--xml` (AT-SPI tree), `--text <xpath>`,
+`--read <xpath>`, `--click <xpath>` / `--click-text "<label>"`, `--set-text <xpath> <value>`,
+`--press <keysym>`, `--sleep <sec>`. Each call opens an isolated Mutter session (sandbox).
 
-**Sobre el input GUI:** en este entorno *headless* Wayland los protocolos de teclado
-virtual y screencopy no están expuestos y GRD VNC corre en `view-only`, así que **el
-control robusto es por capturas + `open`/`run` + OCR**, no por clicar dentro de las apps.
+**GUI input is real here.** Because the primary desktop runs on **X11**, `assistant`
+can `shot` (capture), `move`/`click`/`type` with `xdotool`, and `ocr` — the AI drives the
+same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver.
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────── Host: macOS arm64 / Linux arm64 ────────────────────────────┐
-│                                                                                          │
-│   Browser  ── HTTP :6080 ──►  websockify  ── TCP :5900 ──┐                               │
-│   VNC app  ── TCP  :5902 ────────────────────────────────┤                               │
-│   SSH app  ── TCP  :2222 ────────────────────────────────┤                               │
-│                                                          ▼                               │
-│   ┌─────────────────────── Container: ubuntu-desktop ────────────────────────┐           │
-│   │                                                                          │           │
-│   │   dbus (system + session)                                                │           │
-│   │   pipewire + wireplumber ──► screen capture                              │           │
-│   │   gnome-shell --headless (Wayland) ──► virtual monitor (created on       │           │
-│   │                                          demand by the VNC session)      │           │
-│   │   gnome-remote-desktop-daemon --headless (VNC backend, port 5900)        │           │
-│   │   sshd (port 22)                                                         │           │
-│   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                      │           │
-│   │   session.sh watchdog ── restarts the VNC daemon if the port is lost     │           │
-│   │                                                                          │           │
-│   └──────────────────────────────────────────────────────────────────────────┘           │
-└──────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────── Host: macOS arm64 / Linux arm64 ──────────────────────────────┐
+│                                                                                            │
+│   Browser  ── HTTP :6080 ──►  websockify  ── TCP :5900 ──┐                                 │
+│   VNC app  ── TCP  :5902 ────────────────────────────────┤                                 │
+│   SSH app  ── TCP  :2222 ────────────────────────────────┤                                 │
+│                                                          ▼                                 │
+│   ┌──────────────────────── Container: ubuntu-desktop ────────────────────────┐             │
+│   │                                                                          │             │
+│   │   Xvfb :1  ──►  Cinnamon (panel, Nemo, apps)                              │             │
+│   │   x11vnc  (VNC en :1, puerto 5900, -forever -shared) ◄── websockify/5900  │             │
+│   │   xdotool / import / scrot  (input + captura real para la IA)             │             │
+│   │   dbus (system + session)                                                 │             │
+│   │   sshd (port 22)                                                          │             │
+│   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                       │             │
+│   │   GNOME 50 (secundario, Wayland-only, instalado)                           │             │
+│   │   session.sh watchdog ── restarts Xvfb/Cinnamon/x11vnc if they exit        │             │
+│   │                                                                          │             │
+│   └──────────────────────────────────────────────────────────────────────────┘             │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Design notes
 
-- **GNOME 50 is Wayland-only.** There is no Xorg session anymore, so classic
-  TightVNC/TigerVNC cannot host the desktop. The VNC server is
-  **GNOME Remote Desktop** in headless mode — the official GNOME solution.
-- **The virtual monitor belongs to the VNC session.** `gnome-shell` is started
-  *without* `--virtual-monitor`; the session creates the monitor when a client
-  connects, which is where the shell UI (panel, dock, apps) lives. This is why the
-  stream shows the full desktop instead of a bare background.
-- **Ubuntu's GNOME Remote Desktop is RDP-only**, so the image compiles upstream
-  **50.2** with `-Dvnc=true`. Container hardening applied:
-  - a `dup()` patch in `grd-session-vnc.c` to avoid a double-close of the client
-    socket shared with GLib;
-  - the `grd-headless` wrapper keeps fd 0 as an open socketpair (no EBADF that
-    dropped connections, no idle busy-loop), and `session.sh` forces
-    `screen-share-mode=extend` (virtual monitor).
-- **Resilience.** `session.sh` supervises the VNC daemon: if the port disappears or
-  the daemon exits, it is restarted automatically; the log lives in
-  `/run/user/1000/grd-daemon.log`.
+- **Cinnamon is the primary desktop** (`X11`/`X` on **Xvfb**), served by **`x11vnc`**
+  (`-forever -shared`). Being X11-native, classic tools just work: `xdotool` for input,
+  `import`/`scrot` for real captures, and a **stable VNC/noVNC** that survives changes of
+  the window size.
+- **Why not Wayland-headless for the remote?** Earlier builds used GNOME 50 (Wayland)
+  headless with GNOME Remote Desktop (GRD) — it dropped VNC/noVNC connections and served a
+  gray framebuffer in the container. Moving the primary desktop to **X11 (Cinnamon)** made
+  remote access and control robust. GRD and its shims were removed.
+- **GNOME 50 is still installed, but as a secondary/optional session** (Wayland-only). The
+  default session started by `session.sh` is Cinnamon on X11.
+- **Resilience.** `session.sh` supervises Xvfb, Cinnamon and x11vnc and restarts whichever
+  exits (up to 20 times), logging to `/run/user/1000/session.log`.
 
 ---
 
@@ -345,7 +342,7 @@ Run `make` (or `make help`) to list everything:
 | `make reload` | `down` + `build` + `up` (full recreate). |
 | `make status` | Show container status and noVNC HTTP check. |
 | `make logs` | Follow container logs. |
-| `make logs-grd` | Tail the GNOME Remote Desktop log. |
+| `make logs-x11vnc` | Tail the GNOME Remote Desktop log. |
 | `make shell` | Open a shell as `admin` inside the container. |
 | `make ssh` | Open an SSH session to the container. |
 | `make dev ARGS="gnome-terminal"` | Launch a GUI app inside the graphical session. |
@@ -414,7 +411,7 @@ Please report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 | `make install` fails at build time | Ensure Docker is running and has network access; then `make build` to see the full log. |
 | noVNC shows a **black screen** | Wait a few seconds, then move the pointer. The stream only sends frames when the screen changes. |
 | `New connection has been rejected` | Another VNC client is connected. Close it and reconnect (one session at a time). |
-| VNC port disappears or stops responding | The watchdog restarts it automatically; check `make logs-grd`. |
+| VNC port disappears or stops responding | The watchdog restarts it automatically; check `make logs-x11vnc`. |
 | GUI app does nothing when launched | Use `make dev ARGS="app"` so the session environment is injected. |
 | Helium fails to start (sandbox) | Run `dev helium --no-sandbox` (local use only). |
 | Need to reset everything | `make destroy && make install`. |
@@ -424,7 +421,7 @@ Useful commands:
 ```bash
 make status                                      # container + noVNC check
 make logs                                        # container logs
-make logs-grd                                    # VNC server log
+make logs-x11vnc                                    # VNC server log
 docker compose exec ubuntu-desktop ss -ltn        # listening ports
 ```
 

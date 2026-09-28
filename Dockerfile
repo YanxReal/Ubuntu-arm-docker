@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Ubuntu Desktop (GNOME 50 / Wayland) en contenedor - arm64
-# - Escritorio GNOME completo (shell headless + Ubuntu Dock + apps GNOME)
-# - VNC mediante GNOME Remote Desktop (modo headless) + noVNC
+# Ubuntu Desktop (Cinnamon en X11, principal; GNOME 50 secundario) - arm64
+# - Escritorio Cinnamon en X11 (Xvfb) + x11vnc stable (VNC/noVNC)
+# - GNOME 50 (Wayland) instalado como sesión secundaria/opcional
 # - Usuario: admin / admin    VNC y noVNC: admin
 # - Helium como navegador por defecto (sin Firefox/snap)
 # - Toolchain para apps Tauri v2: Rust, Node, pnpm, yarn, Tauri CLI
@@ -89,6 +89,22 @@ RUN set -eux; \
         gnome-keyring libsecret-tools \
         fonts-dejavu fonts-noto-color-emoji fonts-liberation2 fonts-ubuntu \
         language-pack-es \
+    ; \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# 4b) GNOME 50 (SECUNDARIO / opcional — se instala pero NO es el default)
+#     El principal es Cinnamon (paso 4). GNOME 50 es Wayland-only y corre por
+#     sesión propia si se elige; session.sh arranca Cinnamon (X11/x11vnc).
+# ---------------------------------------------------------------------------
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        gnome-shell ubuntu-session gnome-session-bin \
+        gnome-settings-daemon gnome-shell-extension-ubuntu-dock \
+        xwayland pipewire pipewire-pulse pipewire-bin wireplumber \
+        xdg-desktop-portal-gnome xdg-desktop-portal-gtk \
+        language-pack-gnome-es \
     ; \
     rm -rf /var/lib/apt/lists/*
 

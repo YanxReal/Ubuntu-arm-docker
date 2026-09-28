@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   VNC/noVNC, framebuffer gris, input limitado). Ahora el escritorio es **Cinnamon** (fork
   de GNOME 3, X11-native) corriendo sobre **Xvfb**, servido por **x11vnc** (VNC estable,
   `-forever -shared`) y controlado con **xdotool/import**.
+- **GNOME 50 queda instalado como escritorio secundario/opcional** (solo Wayland): la sesión
+  por defecto de `session.sh` es Cinnamon en X11.
+- La imagen se renombra a `ubuntu-desktop-cinnamon:26.04`; docs y scripts se alinean a
+  "Cinnamon principal + GNOME 50 secundario" (se elimina la referencia a GRD como base).
 - Eliminado el build de **GNOME Remote Desktop** y sus parches (`dup()`, multi-cliente,
   RGBA) y los shims `fd-guard`/`grd-headless`. Ya no se usan.
 - **VNC/noVNC estables** (validado: conexión que aguanta 12 s y varios `SetDesktopSize`

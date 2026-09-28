@@ -54,6 +54,6 @@ If you deploy this beyond your machine, at minimum:
 
 ## Dependency vulnerabilities
 
-The image builds on Ubuntu 26.04 LTS, GNOME 50, GNOME Remote Desktop 50.2, noVNC,
-websockify, Helium, Rust, and Node.js. Reports about vulnerable dependencies are welcome
-and will be triaged like any other security report.
+The image builds on Ubuntu 26.04 LTS, the Cinnamon desktop (X11) with GNOME 50 available,
+x11vnc, noVNC, websockify, Helium, Rust, and Node.js. Reports about vulnerable dependencies
+are welcome and will be triaged like any other security report.

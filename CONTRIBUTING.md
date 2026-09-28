@@ -39,7 +39,7 @@ Useful day-to-day commands:
 
 ```bash
 make logs         # follow container logs
-make logs-grd     # GNOME Remote Desktop log
+make logs-x11vnc  # session log (Xvfb/Cinnamon/x11vnc)
 make shell        # shell as the admin user
 make reload       # full recreate after changes
 ```
@@ -48,16 +48,15 @@ make reload       # full recreate after changes
 
 ```
 .
-├── Dockerfile              # Image definition (Ubuntu + GNOME + GRD/VNC + toolchain)
+├── Dockerfile              # Image definition (Ubuntu + Cinnamon/X11 + x11vnc + toolchain)
 ├── docker-compose.yml      # Service, ports, volumes and environment
 ├── Makefile                # User-facing automation (make install, make help, ...)
 ├── scripts/
 │   ├── entrypoint.sh       # PID 1: dbus, sshd, noVNC, supervision
-│   ├── session.sh          # pipewire + gnome-shell headless + GRD + watchdog
-│   ├── desktop-setup.sh    # GNOME defaults (dock, browser, locking)
+│   ├── session.sh          # Xvfb + Cinnamon (X11) + x11vnc + watchdog
+│   ├── desktop-setup.sh    # Cinnamon defaults (panel, browser, no screensaver)
 │   ├── dev                 # GUI wrapper for the graphical session
-│   └── assistant           # AI control (captures, OCR, open/run, wd/WayDriver)
-│   └── grd-headless        # GRD wrapper (fd0=socketpair) for stable VNC
+│   └── assistant           # AI control (capture/OCR, click/type via X11, wd/WayDriver)
 ├── workspace/              # Bind-mounted source code (/workspace)
 ├── README.md               # English documentation (primary)
 └── README.es.md            # Spanish documentation (kept in sync)
@@ -97,7 +96,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) where possib
 feat: add configurable virtual monitor size
 fix: restart VNC daemon when the port disappears
 docs: sync README.es.md with the English version
-build: pin GNOME Remote Desktop to 50.2
+build: pin Cinnamon/X11 stack or bump GNOME 50 (secondary)
 chore: bump Node.js to 24
 ```
 

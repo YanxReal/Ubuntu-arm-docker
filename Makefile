@@ -1,5 +1,5 @@
 # ============================================================================
-#  Ubuntu ARM Docker — GNOME 50 en contenedor (arm64)
+#  Ubuntu ARM Docker — Cinnamon (principal) + GNOME 50 (secundario) en arm64
 #  Atajos: `make` muestra la ayuda, `make install` lo pone todo en marcha.
 # ============================================================================
 
@@ -13,7 +13,7 @@ export
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install build up down restart status logs logs-grd shell ssh dev assistant reload destroy update
+.PHONY: help install build up down restart status logs logs-x11vnc shell ssh dev assistant reload destroy update
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mUbuntu ARM Docker\033[0m — comandos disponibles:\n\n"} \
@@ -60,8 +60,8 @@ status: ## Muestra el estado y comprueba noVNC
 logs: ## Logs en directo del contenedor
 	$(COMPOSE) logs -f
 
-logs-grd: ## Log del servidor VNC (gnome-remote-desktop)
-	@$(COMPOSE) exec -T $(SERVICE) tail -n 100 /run/user/1000/grd-daemon.log 2>/dev/null || echo "Sin log todavía."
+logs-x11vnc: ## Log del servidor X/Cinnamon/x11vnc (session.log)
+	@$(COMPOSE) exec -T $(SERVICE) tail -n 100 /run/user/1000/session.log 2>/dev/null || echo "Sin log todavía."
 
 shell: ## Shell como admin dentro del contenedor
 	$(COMPOSE) exec -u admin $(SERVICE) bash
