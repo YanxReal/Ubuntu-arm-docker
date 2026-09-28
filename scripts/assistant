@@ -34,9 +34,6 @@ set -euo pipefail
 
 ENV_FILE="/run/user/$(id -u)/desktop-env"
 SHOT_DIR="${HOME:-/home/$(id -un)}/.assistant"
-VNC_SOCK="127.0.0.1::5900"                # GRD VNC dentro del contenedor
-VNC_PASS="${VNC_PASSWORD:-admin}"
-VNC="vncdo -s ${VNC_SOCK} -p ${VNC_PASS}"
 
 if [ -r "${ENV_FILE}" ]; then
   set -a
@@ -49,42 +46,47 @@ die() { echo "✗ $*" >&2; exit 1; }
 
 cmd_help() { sed -n '2,40p' "$0"; exit 0; }
 
-vcndoike() { command -v vncdo >/dev/null 2>&1; }
+xneed() { command -v "$1" >/dev/null 2>&1 || { echo "falta $1" >&2; return 1; }; }
+have_x() { [ -n "${DISPLAY:-}" ] && [ -e "/tmp/.X11-unix/X${DISPLAY#:}" ]; }
 
 # ── status ─────────────────────────────────────────────────────────────────
 cmd_status() {
   echo "Fecha:  $(date)"
   echo "User:   $(id -un) (uid $(id -u))"
-  [ -n "${WAYLAND_DISPLAY:-}" ] && echo "Wayland: ${WAYLAND_DISPLAY}" || echo "Wayland: (sin sesión)"
-  [ -S "${XDG_RUNTIME_DIR:-/nonexistent}/${WAYLAND_DISPLAY:-}" ] \
-    && echo "Sesión:  OK (socket presente)" || echo "Sesión:  NO (gnome-shell caído)"
-  echo "captura: $([ -x "$(command -v vncdo)" ] && echo 'vncdo OK (multi-cliente)' || echo 'vncdo AUSENTE')"
+  echo "DISPLAY:$([ -n "${DISPLAY:-}" ] && echo " ${DISPLAY}" || echo " (sin sesión X)")"
+  have_x && echo "Sesión X: OK" || echo "Sesión X: NO (¿Xvfb/Cinnamon levantado?)"
+  echo "captura: $([ -x "$(command -v import 2>/dev/null)" ] || [ -x "$(command -v scrot 2>/dev/null)" ] && echo 'X11 (import/scrot) OK' || echo 'falta import/scrot')"
+  echo "input:   $([ -x "$(command -v xdotool 2>/dev/null)" ] && echo 'xdotool OK (X11)' || echo 'falta xdotool')"
   echo "ocr:     $(command -v tesseract >/dev/null && echo OK || echo ausente)"
-  (echo > /dev/tcp/127.0.0.1/5900) 2>/dev/null \
-    && echo "VNC:     respondiendo ($VNC_SOCK)" \
-    || echo "VNC:     sin respuesta en 5900"
-  echo "input:   limitado en este entorno headless (VNC view-only / sin uinput)"
+  echo "waydriver: $([ -x /usr/local/cargo/bin/waydriver-mcp ] && echo OK || echo ausente)"
 }
 
-# ── shot / region / ocr ────────────────────────────────────────────────────
+# ── shot / region / ocr (captura real por X11) ─────────────────────────────
 cmd_shot() {
-  vcndoike || die "vncdo (vncdotool) no está instalado."
+  have_x || die "sin sesión X (DISPLAY ${DISPLAY:-})."
   local out="${1:-${SHOT_DIR}/screen.png}"
   mkdir -p "$(dirname "$out")"
-  $VNC capture "$out" >/dev/null 2>&1
-  [ -s "$out" ] || die "Captura vacía (¿VNC levantado?)."
+  if command -v import >/dev/null 2>&1; then
+    import -display "${DISPLAY}" -window root "${out}" >/dev/null 2>&1
+  elif command -v scrot >/dev/null 2>&1; then
+    scrot -o "${out}" >/dev/null 2>&1
+  else
+    die "ni import ni scrot."
+  fi
+  [ -s "$out" ] || die "Captura vacía (¿X levantado?)."
   echo "ok $out"
 }
 
 cmd_region() {
-  vcndoike || die "vncdo (vncdotool) no está instalado."
+  have_x || die "sin sesión X."
+  xneed import || die "falta import (imagemagick)."
   local x="${1:?Uso: assistant region X Y W H [out.png]}"
   local y="${2:?Uso: assistant region X Y W H [out.png]}"
   local w="${3:?Uso: assistant region X Y W H [out.png]}"
   local h="${4:?Uso: assistant region X Y W H [out.png]}"
   local out="${5:-${SHOT_DIR}/region.png}"
   mkdir -p "$(dirname "$out")"
-  $VNC rcapture "$out" "$x" "$y" "$w" "$h" >/dev/null 2>&1
+  import -display "${DISPLAY}" -window root -crop "${w}x${h}+${x}+${y}" +repage "${out}" >/dev/null 2>&1
   [ -s "$out" ] || die "Región vacía."
   echo "ok $out"
 }
@@ -100,46 +102,61 @@ cmd_ocr() {
 cmd_open() { [ -n "${1:-}" ] || die "Uso: assistant open <app>"; exec dev "$@"; }
 cmd_run()  { [ -n "${1:-}" ] || die "Uso: assistant run <cmd...>"; exec dev "$@"; }
 
-# ── input (limitado en headless — intento honesto) ─────────────────────────
+# ── input (X11 real — xdotool) ────────────────────────────────────────────
 cmd_type() {
-  if command -v wtype >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
-    wtype -- "${1:?Uso: assistant type \"texto\"}" >/dev/null 2>&1 \
-      && echo "ok tecleado (wtype): ${1}" && return 0
-  fi
-  echo "✗ el teclado Wayland (wtype) no está disponible o el compositor no lo soporta en headless." >&2
-  return 1
+  have_x || die "sin sesión X."
+  xneed xdotool || die "falta xdotool."
+  xdotool type -- "${1:?Uso: assistant type \"texto\"}" >/dev/null 2>&1 \
+    && echo "ok tecleado: ${1}" || { echo "✗ no pude teclear." >&2; return 1; }
 }
 
 cmd_key() {
-  [ -n "${1:-}" ] || die "Uso: assistant key ctrl+c|super|alt+tab..."
+  have_x || die "sin sesión X."
+  xneed xdotool || die "falta xdotool."
+  [ -n "${1:-}" ] || die "Uso: assistant key ctrl+c|alt+tab|return|tab|super..."
   local combo="$1"
   local mapped
   case "$combo" in
-    ctrl+c) mapped="ctrl c" ;; ctrl+v) mapped="ctrl v" ;; ctrl+a) mapped="ctrl a" ;;
-    enter)  mapped="Return" ;; tab)    mapped="Tab"    ;; space)  mapped="space" ;;
-    esc)    mapped="Escape"  ;;
-    *) echo "✗ atajo no mapeado: $combo (usa ctrl+c, enter, tab...)" >&2; return 1 ;;
+    ctrl+c) mapped="ctrl+c" ;; ctrl+v) mapped="ctrl+v" ;; ctrl+a) mapped="ctrl+a" ;;
+    ctrl+s) mapped="ctrl+s" ;; ctrl+w) mapped="ctrl+w" ;;
+    alt+tab) mapped="alt+Tab" ;;
+    super)   mapped="super_L" ;;
+    enter|return) mapped="Return" ;;
+    tab)     mapped="Tab" ;;
+    space)   mapped="space" ;;
+    esc|escape) mapped="Escape" ;;
+    *)       mapped="$combo" ;;
   esac
-  if command -v wtype >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
-    # shellcheck disable=SC2086
-    wtype -k ${mapped} >/dev/null 2>&1 && echo "ok tecla: $combo" && return 0
-  fi
-  echo "✗ teclado no disponible en este entorno headless." >&2
-  return 1
+  xdotool key "${mapped}" >/dev/null 2>&1 && echo "ok tecla: $combo ($mapped)" \
+    || { echo "✗ no pude enviar $combo" >&2; return 1; }
 }
 
 cmd_click() {
-  vcndoike || die "vncdo no está instalado."
-  echo "✗ input (click) no es fiable aquí: GRD VNC corre en view-only. Usa assistant open/run." >&2
+  have_x || die "sin sesión X."
+  xneed xdotool || die "falta xdotool."
+  local x="${1:?Uso: assistant click X Y}" y="${2:?}"
+  xdotool mousemove --sync "${x}" "${y}" click 1 >/dev/null 2>&1 \
+    && echo "ok click izq ($x,$y)" || return 1
+}
+
+cmd_rclick() {
+  have_x || die "sin sesión X."; xneed xdotool || die "falta xdotool."
   local x="${1:?}" y="${2:?}"
-  $VNC move "$x" "$y" >/dev/null 2>&1 && $VNC click 1 >/dev/null 2>&1 && echo "ok click ($x,$y)" && return 0
-  return 1
+  xdotool mousemove --sync "${x}" "${y}" click 3 >/dev/null 2>&1 \
+    && echo "ok click der ($x,$y)" || return 1
 }
 
 cmd_move() {
-  vcndoike || die "vncdo no está instalado."
+  have_x || die "sin sesión X."; xneed xdotool || die "falta xdotool."
   local x="${1:?Uso: assistant move X Y}" y="${2:?}"
-  $VNC move "$x" "$y" >/dev/null 2>&1 && echo "ok move ($x,$y)" || { echo "✗ no se pudo mover el puntero." >&2; return 1; }
+  xdotool mousemove --sync "${x}" "${y}" >/dev/null 2>&1 && echo "ok move ($x,$y)" || return 1
+}
+
+cmd_drag() {
+  have_x || die "sin sesión X."; xneed xdotool || die "falta xdotool."
+  local x="${1:?Uso: assistant drag X Y}" y="${2:?}"
+  xdotool mousedown 1 mousemove_relative -- "${x%.*}" "${y%.*}" mouseup 1 >/dev/null 2>&1 \
+    && echo "ok drag" || return 1
 }
 
 # ── dispatch ───────────────────────────────────────────────────────────────
@@ -154,7 +171,9 @@ case "${1:-help}" in
   type)     cmd_type "${2:-}" ;;
   key)      cmd_key "${2:-}" ;;
   click)    cmd_click "${2:-}" "${3:-}" ;;
+  rclick)   cmd_rclick "${2:-}" "${3:-}" ;;
   move)     cmd_move "${2:-}" "${3:-}" ;;
+  drag)     cmd_drag "${2:-}" "${3:-}" ;;
   help|-h|--help) cmd_help ;;
   *) echo "Subcomando desconocido: $1" >&2; cmd_help >&2; exit 1 ;;
 esac

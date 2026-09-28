@@ -74,24 +74,21 @@ RUN set -eux; \
     chmod 0440 "/etc/sudoers.d/90-${USERNAME}"
 
 # ---------------------------------------------------------------------------
-# 4) Escritorio GNOME 50 + servicios de sesión Wayland + remoto (GRD)
+# 4) Escritorio Cinnamon (X11-native, estable en contenedor) + X + remoto
+#    x11vnc/xdotool/scrot/Xvfb: VNC sólido, input real y captura sin GRD.
 # ---------------------------------------------------------------------------
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        ubuntu-desktop-minimal \
-        ubuntu-session gnome-shell gnome-session-bin \
-        gnome-shell-extension-ubuntu-dock \
-        gnome-remote-desktop \
-        gnome-settings-daemon \
-        pipewire pipewire-pulse pipewire-bin wireplumber \
-        xwayland \
-        libgl1-mesa-dri libegl-mesa0 libgbm1 mesa-utils \
-        xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk \
+        cinnamon-desktop-environment cinnamon-session cinnamon \
+        xserver-xorg-core xserver-xorg-video-dummy xinit xauth dbus-x11 \
+        xvfb x11vnc xdotool scrot imagemagick feh \
+        mesa-utils libgl1-mesa-dri \
+        xdg-desktop-portal \
         dconf-cli dconf-gsettings-backend gsettings-desktop-schemas libglib2.0-bin \
         gnome-keyring libsecret-tools \
         fonts-dejavu fonts-noto-color-emoji fonts-liberation2 fonts-ubuntu \
-        language-pack-es language-pack-gnome-es \
+        language-pack-es \
     ; \
     rm -rf /var/lib/apt/lists/*
 
@@ -100,12 +97,12 @@ RUN set -eux; \
 # ---------------------------------------------------------------------------
 RUN set -eux; \
     apt-get update; \
-    PKGS="nautilus gnome-terminal gnome-text-editor gnome-calculator \
+    PKGS="nemo gnome-terminal gnome-text-editor gnome-calculator \
           gnome-system-monitor gnome-disk-utility file-roller eog evince \
           gnome-screenshot gnome-calendar gnome-clocks gnome-weather \
           gnome-maps gnome-contacts seahorse baobab gnome-font-viewer \
-          gnome-characters gnome-tweaks gnome-shell-extension-manager \
-          gnome-connections rhythmbox totem cheese"; \
+          gnome-characters gnome-tweaks gnome-console \
+          gnome-connections totem cheese pluma xed"; \
     INSTALL=""; \
     for p in $PKGS; do \
         if apt-cache show "$p" >/dev/null 2>&1; then INSTALL="$INSTALL $p"; else echo "SKIP (no disponible): $p"; fi; \
@@ -148,41 +145,6 @@ RUN set -eux; \
     sed -i 's|^Exec=helium|Exec=helium --no-sandbox|' /usr/share/applications/helium.desktop; \
     rm -rf /var/lib/apt/lists/*; \
     ls -la /usr/share/applications | grep -i helium || true
-
-# ---------------------------------------------------------------------------
-# 8) GNOME Remote Desktop con backend VNC (Ubuntu lo empaqueta solo con RDP)
-# ---------------------------------------------------------------------------
-ARG GRD_VERSION=50.2
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        meson ninja-build \
-        libcairo2-dev libdrm-dev libepoxy-dev libei-dev libnotify-dev \
-        libsecret-1-dev libkrb5-dev libpipewire-0.3-dev libtss2-dev \
-        libxkbcommon-dev libvncserver-dev libvncclient1 libvncserver1; \
-    curl -fsSL "https://gitlab.gnome.org/GNOME/gnome-remote-desktop/-/archive/${GRD_VERSION}/gnome-remote-desktop-${GRD_VERSION}.tar.gz" \
-        -o /tmp/grd.tar.gz; \
-    tar -xzf /tmp/grd.tar.gz -C /tmp; \
-    cd "/tmp/gnome-remote-desktop-${GRD_VERSION}"; \
-    sed -i 's|^#include "config.h"|#include "config.h"\n\n#include <unistd.h>|' src/grd-session-vnc.c; \
-    sed -i 's|rfb_screen->inetdSock = g_socket_get_fd (socket);|rfb_screen->inetdSock = dup (g_socket_get_fd (socket));|' src/grd-session-vnc.c; \
-    grep -q "dup (g_socket_get_fd" src/grd-session-vnc.c; \
-    # Permitir varios clientes VNC a la vez (AI + humano): subir el límite
-    sed -i 's|grd_throttler_limits_set_max_global_connections (limits, 1);|grd_throttler_limits_set_max_global_connections (limits, 4);|' src/grd-vnc-server.c; \
-    grep -q "max_global_connections (limits, 4)" src/grd-vnc-server.c; \
-    # (neverShared se mantiene TRUE: cada conexión es su propia screen en modo inetd)
-    # Fix crasheo al inyectar input: la tabla de formatos no incluye RGBA (usado
-    # por el stream de screencast con metadata de cursor). Se añade la entrada.
-    sed -i 's|  { SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888, 4 },|  { SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888, 4 },\n  { SPA_VIDEO_FORMAT_RGBA, DRM_FORMAT_ABGR8888, 4 },|' src/grd-pipewire-utils.c; \
-    grep -q "SPA_VIDEO_FORMAT_RGBA" src/grd-pipewire-utils.c; \
-    meson setup build --prefix=/usr --buildtype=release \
-        -Drdp=false -Dvnc=true -Dsystemd=false -Dman=false -Dtests=false; \
-    ninja -C build; \
-    ninja -C build install; \
-    cd /; \
-    rm -rf /tmp/gnome-remote-desktop-* /tmp/grd.tar.gz; \
-    rm -rf /var/lib/apt/lists/*; \
-    grdctl --help 2>&1 | grep -qi vnc
 
 # ---------------------------------------------------------------------------
 # 9) Rust (rustup) para Tauri v2
@@ -247,24 +209,16 @@ RUN set -eux; \
       > /etc/ssh/sshd_config.d/10-dev-desktop.conf
 
 # ---------------------------------------------------------------------------
-# 12) Control de escritorio para agentes / IA
-#     - grim:    captura de pantalla a nivel Wayland (no usa el slot de VNC)
-#     - wtype:   teclado vía protocolo virtual-keyboard (funciona siempre)
-#     - ydotool: puntero (mouse); necesita /dev/uinput si está disponible
-#     - tesseract: OCR para que la IA lea texto de las capturas
+# 12) OCR y utilidades para la IA (captura+input ya los dan X11: import/xdotool)
+#     - tesseract: OCR para leer el texto de las capturas
 # ---------------------------------------------------------------------------
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        grim wtype ydotool \
         tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa \
         python3-pil python3-requests \
     ; \
-    rm -rf /var/lib/apt/lists/*; \
-    # Cliente VNC (captura + input) para control de la IA
-    python3 -m pip install --no-cache-dir --break-system-packages \
-        --quiet vncdotool; \
-    command -v grim; command -v wtype; command -v ydotool; command -v tesseract
+    rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
 # 13) WayDriver — control headless de apps GTK (GNOME/Mutter) para la IA
@@ -290,7 +244,8 @@ RUN set -eux; \
 COPY scripts/ /usr/local/bin/
 RUN set -eux; \
     chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/session.sh \
-             /usr/local/bin/desktop-setup.sh /usr/local/bin/dev; \
+             /usr/local/bin/desktop-setup.sh \
+             /usr/local/bin/dev /usr/local/bin/assistant; \
     install -d -m 0755 -o "${USERNAME}" -g "${USER_GID}" /workspace
 
 WORKDIR /workspace

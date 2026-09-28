@@ -1,18 +1,18 @@
-# Ubuntu ARM Docker — Escritorio GNOME 50 en un contenedor
+# Ubuntu ARM Docker — Escritorio Cinnamon en un contenedor
 
 [![Plataforma](https://img.shields.io/badge/plataforma-linux%2Farm64-blue?logo=linux&logoColor=white)](#requisitos)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/26.04/)
-[![GNOME](https://img.shields.io/badge/GNOME-50-4A86CF?logo=gnome&logoColor=white)](https://release.gnome.org/50/)
+[![Cinnamon](https://img.shields.io/badge/DE-Cinnamon_6.4-4A86CF?logo=linux&logoColor=white)](#características)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Instalar](https://img.shields.io/badge/instalar-curl_%7C_bash-brightgreen)](#inicio-rápido)
 [![CI](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> Un escritorio **Ubuntu 26.04 LTS (Resolute Raccoon)** completo y listo para producción
-> con **GNOME Shell 50 (Wayland)** dentro de Docker sobre **arm64**, accesible desde el
-> navegador (**noVNC**), cualquier cliente **VNC** o **SSH** — con el navegador
-> **Helium** y un toolchain **Tauri v2** listo para usar.
+> Un escritorio **Ubuntu 26.04 LTS (Resolute Raccoon)** con el **escritorio Cinnamon**
+> corriendo sobre un stack **X11 (Xvfb) + x11vnc estable** dentro de Docker sobre
+> **arm64**, accesible desde el navegador (**noVNC**), cualquier cliente **VNC** o **SSH**
+> — con el navegador **Helium** y un toolchain **Tauri v2** listo para usar.
 
 [English](README.md) · **Español**
 

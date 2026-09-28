@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
-# Valores por defecto del escritorio: dock, sin bloqueo, Helium por defecto.
+# Valores por defecto de Cinnamon: sin bloqueo/screensaver, sin animaciones,
+# sin compositor (Xvfb no tiene GL), Helium como navegador por defecto.
 set -uo pipefail
 
 log() { printf '[desktop-setup] %s\n' "$*"; }
 
-gsettings set org.gnome.desktop.session idle-delay 0 || true
-gsettings set org.gnome.desktop.screensaver lock-enabled false || true
-gsettings set org.gnome.desktop.screensaver idle-activation-enabled false || true
-gsettings set org.gnome.desktop.interface enable-animations false || true
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
-gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close' || true
+# --- Cinnamon: inactividad y screensaver off ---------------------------------
+gsettings set org.cinnamon.desktop.session idle-delay 0 || true
+gsettings set org.cinnamon.screensaver idle-activation-enabled false || true
+gsettings set org.cinnamon.desktop.interface enable-animations false || true
+gsettings set org.cinnamon.desktop.interface color-scheme 'prefer-dark' || true
+
+# --- Compositor off (Xvfb no tiene GL). Best-effort ------------------------
+command -v dconf >/dev/null 2>&1 && \
+  dconf write /org/cinnamon/desktop/wm/preferences/compositing-enabled false 2>/dev/null || true
 
 # --- Navegador por defecto: Helium ------------------------------------------
 HELIUM_DESKTOP="$(ls /usr/share/applications 2>/dev/null | grep -i '^helium.*\.desktop$' | head -n1)"
@@ -18,6 +22,7 @@ if [ -z "${HELIUM_DESKTOP}" ]; then
 fi
 if [ -n "${HELIUM_DESKTOP}" ]; then
   log "navegador por defecto: ${HELIUM_DESKTOP}"
+  export DISPLAY=":${DISPLAY_NR:-1}"
   xdg-settings set default-web-browser "${HELIUM_DESKTOP}" || true
   xdg-mime default "${HELIUM_DESKTOP}" \
     x-scheme-handler/http x-scheme-handler/https text/html \
@@ -26,11 +31,10 @@ else
   log "aviso: no se encontró el .desktop de Helium"
 fi
 
-# --- Dock de Ubuntu y apps favoritas ----------------------------------------
-gsettings set org.gnome.shell enabled-extensions "['ubuntu-dock@ubuntu.com']" || true
-gsettings set org.gnome.shell favorite-apps \
-  "['${HELIUM_DESKTOP:-helium.desktop}', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.TextEditor.desktop']" || true
-gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true || true
-gsettings set org.gnome.shell.extensions.dash-to-dock click-action 'minimize-or-previews' || true
+# --- Favoritos en el panel de Cinnamon (applet-launcher) ---------------------
+if command -v dconf >/dev/null 2>&1; then
+  dconf write /org/cinnamon/favorites \
+    "['${HELIUM_DESKTOP:-helium.desktop}', 'nemo.desktop', 'gnome-terminal.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop']" 2>/dev/null || true
+fi
 
 log "ajustes aplicados"

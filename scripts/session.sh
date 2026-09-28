@@ -1,174 +1,110 @@
 #!/usr/bin/env bash
-# Sesión gráfica GNOME 50 headless (Wayland) + GNOME Remote Desktop (VNC).
+# Sesión de escritorio Cinnamon en X11 (Xvfb) + x11vnc (VNC estable).
+# Sustituye a la sesión GNOME/Wayland-headless + GRD.
 set -Eeuo pipefail
 
+XDG_RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+USER_UID="${USER_UID:-1000}"
+DISPLAY_NR="${DISPLAY_NR:-1}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
-VNC_PASSWORD="${VNC_PASSWORD:-admin}"
 VNC_PORT="${VNC_PORT:-5900}"
-USER_UID_REAL="$(id -u)"
+VNC_PASSWORD="${VNC_PASSWORD:-admin}"
+AUTH_FILE="${XDG_RUNTIME}/vncpasswd"
+ENV_FILE="${XDG_RUNTIME}/desktop-env"
+X11_AUTH="${XDG_RUNTIME}/.Xauthority"
+LOG="${XDG_RUNTIME}/session.log"
 
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${USER_UID_REAL}}"
-export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
-export XDG_SESSION_TYPE=wayland
-export XDG_SESSION_CLASS=user
-export XDG_CURRENT_DESKTOP=ubuntu:GNOME
-export XDG_SESSION_DESKTOP=ubuntu
-export WAYLAND_DISPLAY=wayland-0
-export DISPLAY=:0
-export XDG_DATA_DIRS="/usr/local/share:/usr/share"
-export LIBGL_ALWAYS_SOFTWARE=1
-export GALLIUM_DRIVER=llvmpipe
+log() { echo "$(date -Is) $*" | tee -a "${LOG}"; }
 
-log() { printf '[session] %s\n' "$*"; }
+mkdir -p "${XDG_RUNTIME}"
+chmod 0700 "${XDG_RUNTIME}"
 
-# Modo de sesión de GNOME Shell (ubuntu si está disponible)
-for mode in ubuntu gnome user; do
-  if [ -f "/usr/share/gnome-shell/modes/${mode}.json" ]; then
-    export GNOME_SHELL_SESSION_MODE="${mode}"
-    break
-  fi
-done
+# --- env compartido (lo usa `dev` / `assistant`) --------------------------
+cat > "${ENV_FILE}" <<EOF
+export XDG_RUNTIME_DIR="${XDG_RUNTIME}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME}/bus"
+export DISPLAY=":${DISPLAY_NR}"
+export XDG_SESSION_TYPE="x11"
+export XDG_CURRENT_DESKTOP="Cinnamon"
+export XAUTHORITY="${X11_AUTH}"
+export RESOLUTION="${RESOLUTION}"
+export VNC_PORT="${VNC_PORT}"
+export VNC_PASSWORD="${VNC_PASSWORD}"
+EOF
+chmod 0644 "${ENV_FILE}" 2>/dev/null || true
 
-mkdir -p "${XDG_RUNTIME_DIR}"
-chmod 0700 "${XDG_RUNTIME_DIR}"
-rm -f "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}.lock"
+# --- Xvfb (servidor X virtual) ---------------------------------------------
+start_xvfb() {
+  W=${RESOLUTION%%x*}; H=${RESOLUTION##*x}
+  log "arrancando Xvfb :${DISPLAY_NR} ${W}x${H}x24"
+  Xvfb ":${DISPLAY_NR}" -screen 0 "${W}x${H}x24" -nolisten tcp -ac \
+    +extension GLX +extension RENDER >/dev/null 2>&1 &
+  XVFB_PID=$!
+}
 
-# --- PipeWire (captura de pantalla para GRD) --------------------------------
-log "iniciando pipewire"
-pipewire &
-PIPEWIRE_PID=$!
-wireplumber &
-WIREPLUMBER_PID=$!
+# --- Cinnamon (as admin, con el bus de sesión) ------------------------------
+start_cinnamon() {
+  log "lanzando Cinnamon en :${DISPLAY_NR}"
+  sudo -u "$(id -un)" -H env \
+    DISPLAY=":${DISPLAY_NR}" XAUTHORITY="${X11_AUTH}" \
+    XDG_RUNTIME_DIR="${XDG_RUNTIME}" \
+    DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME}/bus" \
+    XDG_SESSION_ID=1 XDG_SESSION_CLASS=user XDG_SESSION_TYPE=x11 \
+    XDG_SEAT=seat0 XDG_CURRENT_DESKTOP=Cinnamon \
+    CINNAMON_DISABLE_COMPOSITING=1 \
+    cinnamon-session --session cinnamon >/dev/null 2>&1 &
+  CINN_PID=$!
+}
 
-# --- Ajustes de escritorio ---------------------------------------------------
-log "aplicando ajustes de escritorio"
-/usr/local/bin/desktop-setup.sh || log "aviso: desktop-setup.sh terminó con errores"
+# --- x11vnc (VNC estable, multi-cliente, no cierra al desconectar) ---------
+start_x11vnc() {
+  log "arrancando x11vnc en :${DISPLAY_NR} puerto ${VNC_PORT}"
+  DISPLAY=":${DISPLAY_NR}" XAUTHORITY="${X11_AUTH}" \
+    x11vnc -display ":${DISPLAY_NR}" -rfbport "${VNC_PORT}" \
+      -forever -shared -norc -noxdamage -wait 10 -defer 10 \
+      -rfbauth "${AUTH_FILE}" -quiet \
+      >"${XDG_RUNTIME}/x11vnc.log" 2>&1 &
+  X11VNC_PID=$!
+}
 
-# --- GNOME Remote Desktop (modo headless, backend VNC) ----------------------
-log "configurando GNOME Remote Desktop (VNC ${VNC_PORT})"
-mkdir -p "${HOME}/.local/share/gnome-remote-desktop"
-gsettings set org.gnome.desktop.remote-desktop.vnc.headless port "${VNC_PORT}" || true
-gsettings set org.gnome.desktop.remote-desktop.vnc.headless enable true || true
-if command -v grdctl >/dev/null 2>&1; then
-  grdctl --headless vnc set-password "${VNC_PASSWORD}" \
-    || log "aviso: no se pudo fijar la contraseña VNC"
-  grdctl --headless vnc disable-view-only || true
-fi
+# --- password VNC -----------------------------------------------------------
+printf '%s\n%s\n' "${VNC_PASSWORD}" "${VNC_PASSWORD}" | x11vnc -storepasswd "${VNC_PASSWORD}" "${AUTH_FILE}" >/dev/null 2>&1
+chown "$(id -u):$(id -g)" "${AUTH_FILE}" 2>/dev/null || true
 
-# --- GNOME Shell headless ----------------------------------------------------
-# Sin --virtual-monitor: el monitor virtual lo crea la propia sesión de GNOME
-# Remote Desktop al conectarse, y es ahí donde vive la UI del shell (panel/dock).
-log "lanzando gnome-shell headless"
-gnome-shell --headless --wayland-display "${WAYLAND_DISPLAY}" &
-SHELL_PID=$!
-
-SHELL_READY=0
-for i in $(seq 1 120); do
-  if gdbus call --session --dest org.freedesktop.DBus \
-       --object-path /org/freedesktop/DBus \
-       --method org.freedesktop.DBus.NameHasOwner org.gnome.Shell 2>/dev/null | grep -q true; then
-    log "gnome-shell listo tras ${i}s"
-    SHELL_READY=1
-    break
-  fi
-  if ! kill -0 "${SHELL_PID}" 2>/dev/null; then
-    log "ERROR: gnome-shell terminó inesperadamente"
-    exit 1
-  fi
+start_xvfb
+sleep 2
+[[ -S "/tmp/.X11-unix/X${DISPLAY_NR}" || -S "${XDG_RUNTIME}/X${DISPLAY_NR}" ]] || log "aviso: socket X :${DISPLAY_NR} no visible"
+start_cinnamon
+# x11vnc no arranca hasta que el X esté listo
+for i in $(seq 1 30); do
+  [ -e "/tmp/.X11-unix/X${DISPLAY_NR}" ] && break
   sleep 1
 done
-if [ "${SHELL_READY}" -ne 1 ]; then
-  log "ERROR: gnome-shell no apareció en el bus de sesión"
-  exit 1
-fi
+start_x11vnc
+sleep 3
 
-# --- Daemon VNC de GNOME Remote Desktop -------------------------------------
-GRD_CANDIDATE="$(dpkg -L gnome-remote-desktop 2>/dev/null | grep -E '/gnome-remote-desktop-daemon$' | head -n1 || true)"
-GRD_BIN=""
-for candidate in "${GRD_CANDIDATE}" /usr/libexec/gnome-remote-desktop-daemon \
-                 /usr/lib/gnome-remote-desktop/gnome-remote-desktop-daemon; do
-  if [ -n "${candidate}" ] && [ -x "${candidate}" ]; then
-    GRD_BIN="${candidate}"
-    break
+log "sesión lista: X:${DISPLAY_NR}, Cinnamon pid=${CINN_PID}, x11vnc pid=${X11VNC_PID}"
+
+# watchdog: si cinnamon o x11vnc mueren, reintentamos (hasta 20 veces)
+RESTARTS=0
+while true; do
+  if ! kill -0 "${CINN_PID}" 2>/dev/null || ! kill -0 "${X11VNC_PID}" 2>/dev/null; then
+    RESTARTS=$((RESTARTS + 1))
+    log "alguno cayó (cin=${CINN_PID} vnc=${X11VNC_PID}); reintento ${RESTARTS}"
+    if [ "${RESTARTS}" -gt 20 ]; then
+      log "demasiados reinicios; saliendo"
+      exit 1
+    fi
+    if ! kill -0 "${X11VNC_PID}" 2>/dev/null; then
+      pkill -f "Xvfb :${DISPLAY_NR}" 2>/dev/null || true
+      start_xvfb; sleep 2
+    fi
+    if ! kill -0 "${CINN_PID}" 2>/dev/null; then
+      start_cinnamon
+    fi
+    start_x11vnc
+    sleep 3
+    continue
   fi
+  sleep 10
 done
-if [ -z "${GRD_BIN}" ] || [ ! -x "${GRD_BIN}" ]; then
-  log "ERROR: no se encuentra gnome-remote-desktop-daemon"
-  exit 1
-fi
-
-GRD_LOG="${XDG_RUNTIME_DIR}/grd-daemon.log"
-
-start_grd() {
-  log "iniciando ${GRD_BIN} --headless (log: ${GRD_LOG})"
-  echo "=== $(date -Is) iniciando daemon VNC ===" >>"${GRD_LOG}"
-  gsettings set org.gnome.desktop.remote-desktop.vnc.headless enable true >>"${GRD_LOG}" 2>&1 || true
-  # Modo "extend" (monitor virtual): sin él GRD gira a ~95% en reposo buscando
-  # grabar un monitor primario inexistente en headless; con extend queda a ~0.4%.
-  gsettings set org.gnome.desktop.remote-desktop.vnc screen-share-mode extend >>"${GRD_LOG}" 2>&1 || true
-  # El wrapper grd-headless mantiene fd0 como socketpair (peer vivo): evita EBADF
-  # por reuso de fd0 (caían conexiones) sin el bucle idle de un pipe (POLLHUP).
-  /usr/local/bin/grd-headless --headless >>"${GRD_LOG}" 2>&1 &
-  GRD_PID=$!
-  local i
-  for i in $(seq 1 30); do
-    if ss -ltn 2>/dev/null | grep -q ":${VNC_PORT} "; then
-      log "VNC escuchando en ${VNC_PORT} tras ${i}s"
-      return 0
-    fi
-    if ! kill -0 "${GRD_PID}" 2>/dev/null; then
-      log "ERROR: el daemon de GNOME Remote Desktop terminó"
-      return 1
-    fi
-    sleep 1
-  done
-  log "aviso: el puerto ${VNC_PORT} no aparece como escuchando"
-  return 1
-}
-
-# --- Entorno exportable para shells externos --------------------------------
-cat > "${XDG_RUNTIME_DIR}/desktop-env" <<EOF
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}"
-export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS}"
-export WAYLAND_DISPLAY="${WAYLAND_DISPLAY}"
-export DISPLAY="${DISPLAY}"
-export XDG_SESSION_TYPE="wayland"
-export XDG_CURRENT_DESKTOP="ubuntu:GNOME"
-EOF
-chmod 0644 "${XDG_RUNTIME_DIR}/desktop-env" 2>/dev/null || true
-
-cleanup() {
-  log "apagando sesión"
-  kill -TERM "${GRD_PID:-}" "${SHELL_PID:-}" "${WIREPLUMBER_PID:-}" "${PIPEWIRE_PID:-}" 2>/dev/null || true
-  wait 2>/dev/null || true
-}
-trap cleanup SIGTERM SIGINT
-
-# --- Supervisor: si el daemon VNC muere o pierde el puerto, se reinicia -----
-GRD_RESTARTS=0
-while kill -0 "${SHELL_PID}" 2>/dev/null; do
-  start_grd || true
-  while kill -0 "${SHELL_PID}" 2>/dev/null; do
-    if ! kill -0 "${GRD_PID}" 2>/dev/null; then
-      log "el daemon VNC terminó; se reiniciará"
-      break
-    fi
-    if ! ss -ltn 2>/dev/null | grep -q ":${VNC_PORT} "; then
-      log "aviso: el puerto VNC desapareció; reiniciando el daemon"
-      kill -TERM "${GRD_PID}" 2>/dev/null || true
-      wait "${GRD_PID}" 2>/dev/null || true
-      break
-    fi
-    sleep 5
-  done
-  kill -0 "${SHELL_PID}" 2>/dev/null || break
-  GRD_RESTARTS=$((GRD_RESTARTS + 1))
-  if [ "${GRD_RESTARTS}" -gt 20 ]; then
-    log "ERROR: demasiados reinicios del daemon VNC"
-    break
-  fi
-done
-
-log "la sesión ha terminado (gnome-shell caído o límite de reinicios)"
-cleanup
-exit 1

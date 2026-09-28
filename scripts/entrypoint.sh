@@ -36,10 +36,9 @@ rm -rf /run/systemd/seats /run/systemd/sessions /run/systemd/users
 cat > /etc/profile.d/00-dev-desktop-env.sh <<EOF
 export XDG_RUNTIME_DIR="${RUNTIME_DIR}"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus"
-export WAYLAND_DISPLAY="wayland-0"
-export DISPLAY=":0"
-export XDG_SESSION_TYPE="wayland"
-export XDG_CURRENT_DESKTOP="ubuntu:GNOME"
+export DISPLAY=":1"
+export XDG_SESSION_TYPE="x11"
+export XDG_CURRENT_DESKTOP="Cinnamon"
 EOF
 chmod 0644 /etc/profile.d/00-dev-desktop-env.sh
 
@@ -73,8 +72,8 @@ if [ -x /usr/sbin/sshd ]; then
   SSHD_PID=$!
 fi
 
-# --- Sesión gráfica (gnome-shell headless + GNOME Remote Desktop) ----------
-log "arrancando sesión GNOME headless (${RESOLUTION})"
+# --- Sesión gráfica (Xvfb + Cinnamon en X11 + x11vnc) ----------------------
+log "arrancando sesión Cinnamon (X11, Xvfb :1, ${RESOLUTION})"
 sudo -u "${USERNAME}" -H env \
   XDG_RUNTIME_DIR="${RUNTIME_DIR}" \
   DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus" \

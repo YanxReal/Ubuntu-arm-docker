@@ -1,18 +1,18 @@
-# Ubuntu ARM Docker — GNOME 50 Desktop in a Container
+# Ubuntu ARM Docker — Cinnamon Desktop in a Container
 
 [![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue?logo=linux&logoColor=white)](#requirements)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/26.04/)
-[![GNOME](https://img.shields.io/badge/GNOME-50-4A86CF?logo=gnome&logoColor=white)](https://release.gnome.org/50/)
+[![Cinnamon](https://img.shields.io/badge/DE-Cinnamon_6.4-4A86CF?logo=linux&logoColor=white)](#features)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Install](https://img.shields.io/badge/install-curl_%7C_bash-brightgreen)](#quick-start)
 [![CI](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> A complete, production-grade **Ubuntu 26.04 LTS (Resolute Raccoon)** desktop with
-> **GNOME Shell 50 (Wayland)** running inside Docker on **arm64**, reachable from a
-> browser (**noVNC**), any **VNC** client, or **SSH** — with the **Helium** browser and a
-> ready-to-use **Tauri v2** toolchain.
+> A complete **Ubuntu 26.04 LTS (Resolute Raccoon)** desktop with the **Cinnamon**
+> DE running over a stable **X11 (Xvfb) + x11vnc** stack inside Docker on **arm64** —
+> reachable from a browser (**noVNC**), any **VNC** client, or **SSH**, with the
+> **Helium** browser and a ready-to-use **Tauri v2** toolchain.
 
 **English** · [Español](README.es.md)
 
@@ -71,22 +71,24 @@ Everything is orchestrated with a single `make install`.
 ## Features
 
 - **Ubuntu 26.04 LTS (arm64)** base image, always the latest LTS release line.
-- **GNOME Shell 50.1** in headless Wayland mode with the full desktop experience:
-  panel, Ubuntu Dock, Nautilus, GNOME Terminal, Text Editor, Calculator, System
-  Monitor, Files, DING desktop icons, Yaru theme, and more.
-- **GNOME Remote Desktop 50.2 built from source with the VNC backend** (Ubuntu ships
-  RDP-only in this release), plus a small `dup()` patch that keeps the VNC socket
-  stable in containers (no busy-loop: GRD sits at ~0% CPU when idle).
+- **Cinnamon 6.4** desktop (a GNOME 3 fork) over a stable **X11 stack** — panel,
+  Nemo file manager, themes, GNOME apps (Terminal, Text Editor, Calculator, System
+  Monitor, Files), desktop icons, and more.
+- **Estable y robusto**: corre sobre **Xvfb** y se sirve con **x11vnc** (`-forever
+  -shared`); no hay GRD/Wayland-headless → conexiones VNC/noVNC **estables** (aguantan
+  cambios de tamaño) y captura en color real.
 - **noVNC + websockify** on port `6080` and native VNC on port `5900`
   (published to the host as `5902` by default).
 - **OpenSSH server** with password authentication, exposing full shell control.
 - **Helium** (Chromium-based, beta) set as the default browser via `xdg-settings`.
 - **Tauri v2 system dependencies**: WebKitGTK 4.1, GTK3, Ayatana AppIndicator,
   librsvg, libxdo, OpenSSL, libsoup-3, and more.
-- **Software rendering** with Mesa llvmpipe — no GPU required.
+- **Software rendering** with Mesa llvmpipe over Xvfb — no GPU required.
+- **AI control real**: `assistant shot/ocr` (captura X11) y `assistant move/click/type`
+  vía **xdotool** sobre el escritorio; además WayDriver para probar apps GTK aisladas.
 - **Per-user persistence** through Docker named volumes (`admin-home`, `ssh-host-keys`).
-- **Health supervision**: `session.sh` monitors the VNC port and restarts the daemon
-  automatically if it dies (up to 20 times), logging to `grd-daemon.log`.
+- **Health supervision**: `session.sh` supervisa Xvfb/Cinnamon/x11vnc y los reinicia
+  si caen (hasta 20 veces), con logs en `session.log`.
 
 ---
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Escritorio: Cinnamon (X11) en vez de GNOME 50/Wayland.** Motivo: la sesión Wayland
+  headless con GNOME Remote Desktop (GRD) era frágil en el contenedor (desconexiones
+  VNC/noVNC, framebuffer gris, input limitado). Ahora el escritorio es **Cinnamon** (fork
+  de GNOME 3, X11-native) corriendo sobre **Xvfb**, servido por **x11vnc** (VNC estable,
+  `-forever -shared`) y controlado con **xdotool/import**.
+- Eliminado el build de **GNOME Remote Desktop** y sus parches (`dup()`, multi-cliente,
+  RGBA) y los shims `fd-guard`/`grd-headless`. Ya no se usan.
+- **VNC/noVNC estables** (validado: conexión que aguanta 12 s y varios `SetDesktopSize`
+  resize; handshake VNC OK desde el host).
+- **AI con ojos y manos reales**: `assistant shot/ocr` (captura X11 real, 1920×1080 multi-
+  color) y `assistant move/click/type` vía **xdotool** sobre el escritorio.
+- `assistant` deja de usar VNC/vncdotool; `waydriver-mcp` se mantiene para probar apps GTK
+  aisladas.
+
 ### Added
 
 - `scripts/assistant`: control de escritorio para agentes/IA — capturas por VNC
