@@ -1,5 +1,5 @@
 # ============================================================================
-#  Ubuntu ARM Docker — Cinnamon (principal) + GNOME 50 (secundario) en arm64
+#  Ubuntu ARM Docker — XFCE (principal) + GNOME 50 (secundario) en arm64
 #  Atajos: `make` muestra la ayuda, `make install` lo pone todo en marcha.
 # ============================================================================
 
@@ -60,7 +60,7 @@ status: ## Muestra el estado y comprueba noVNC
 logs: ## Logs en directo del contenedor
 	$(COMPOSE) logs -f
 
-logs-x11vnc: ## Log del servidor X/Cinnamon/x11vnc (session.log)
+logs-x11vnc: ## Log del servidor X/XFCE/x11vnc (session.log)
 	@$(COMPOSE) exec -T $(SERVICE) tail -n 100 /run/user/1000/session.log 2>/dev/null || echo "Sin log todavía."
 
 shell: ## Shell como admin dentro del contenedor

@@ -1,15 +1,15 @@
-# Ubuntu ARM Docker — Cinnamon Desktop in a Container
+# Ubuntu ARM Docker — XFCE Desktop in a Container
 
 [![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue?logo=linux&logoColor=white)](#requirements)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04_LTS-E95420?logo=ubuntu&logoColor=white)](https://releases.ubuntu.com/26.04/)
-[![Cinnamon](https://img.shields.io/badge/DE-Cinnamon_6.4-4A86CF?logo=linux&logoColor=white)](#features)
+[![XFCE](https://img.shields.io/badge/DE-XFCE_6.4-4A86CF?logo=linux&logoColor=white)](#features)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![Install](https://img.shields.io/badge/install-curl_%7C_bash-brightgreen)](#quick-start)
 [![CI](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/YanxReal/Ubuntu-arm-docker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-> A complete **Ubuntu 26.04 LTS (Resolute Raccoon)** desktop with the **Cinnamon**
+> A complete **Ubuntu 26.04 LTS (Resolute Raccoon)** desktop with the **XFCE**
 > DE running over a stable **X11 (Xvfb) + x11vnc** stack inside Docker on **arm64** —
 > reachable from a browser (**noVNC**), any **VNC** client, or **SSH**, with the
 > **Helium** browser and a ready-to-use **Tauri v2** toolchain.
@@ -43,11 +43,11 @@
 
 ## Overview
 
-This project packages a **Cinnamon desktop** into a single Docker image for arm64 hosts
+This project packages a **XFCE desktop** into a single Docker image for arm64 hosts
 (Apple Silicon, ARM servers, and other `linux/arm64` machines). It was designed for
 developers who want a clean, disposable Linux desktop for building and testing
 **Tauri v2** applications, browsing with **Helium**, or simply experimenting with
-**Ubuntu 26.04 + Cinnamon** without touching their host system.
+**Ubuntu 26.04 + XFCE** without touching their host system.
 
 Everything is orchestrated with a single `make install`.
 
@@ -57,7 +57,7 @@ Everything is orchestrated with a single `make install`.
 |---|---|
 | ⚡ **One-line install** | `curl … install.sh \| bash` (macOS/Linux) or `irm … install.ps1 \| iex` (Windows) |
 | 🪟 **Cross-platform** | Same container on macOS, Linux & Windows (PowerShell) |
-| 🖥️ **Cinnamon desktop** | Primary on X11 (stable VNC/remote) |
+| 🖥️ **XFCE desktop** | Primary on X11 (stable VNC/remote) |
 | 🌐 **Two remote paths** | noVNC in the browser and native VNC (same password) |
 | 🔐 **SSH access** | `admin` user with passwordless `sudo` (root-equivalent) |
 | 🧭 **Helium browser** | Default browser, installed from the official APT repository |
@@ -71,7 +71,7 @@ Everything is orchestrated with a single `make install`.
 ## Features
 
 - **Ubuntu 26.04 LTS (arm64)** base image, always the latest LTS release line.
-- **Cinnamon 6.4** desktop (a GNOME 3 fork) over a stable **X11 stack** — panel,
+- **XFCE 4.20** desktop (a GNOME 3 fork) over a stable **X11 stack** — panel,
   Nemo file manager, themes, GNOME apps (Terminal, Text Editor, Calculator, System
   Monitor, Files), desktop icons, and more.
 - **Estable y robusto**: corre sobre **Xvfb** y se sirve con **x11vnc** (`-forever
@@ -87,7 +87,7 @@ Everything is orchestrated with a single `make install`.
 - **AI control real**: `assistant shot/ocr` (captura X11) y `assistant move/click/type`
   vía **xdotool** sobre el escritorio; además WayDriver para probar apps GTK aisladas.
 - **Per-user persistence** through Docker named volumes (`admin-home`, `ssh-host-keys`).
-- **Health supervision**: `session.sh` supervisa Xvfb/Cinnamon/x11vnc y los reinicia
+- **Health supervision**: `session.sh` supervisa Xvfb/XFCE/x11vnc y los reinicia
   si caen (hasta 20 veces), con logs en `session.log`.
 
 ---
@@ -275,13 +275,13 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
 │                                                          ▼                                 │
 │   ┌──────────────────────── Container: ubuntu-desktop ────────────────────────┐             │
 │   │                                                                          │             │
-│   │   Xvfb :1  ──►  Cinnamon (panel, Nemo, apps)                              │             │
+│   │   Xvfb :1  ──►  XFCE (panel, Nemo, apps)                              │             │
 │   │   x11vnc  (VNC en :1, puerto 5900, -forever -shared) ◄── websockify/5900  │             │
 │   │   xdotool / import / scrot  (input + captura real para la IA)             │             │
 │   │   dbus (system + session)                                                 │             │
 │   │   sshd (port 22)                                                          │             │
 │   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                       │             │
-│   │   session.sh watchdog ── restarts Xvfb/Cinnamon/x11vnc if they exit        │             │
+│   │   session.sh watchdog ── restarts Xvfb/XFCE/x11vnc if they exit        │             │
 │   │                                                                          │             │
 │   └──────────────────────────────────────────────────────────────────────────┘             │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -289,18 +289,18 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
 
 ### Design notes
 
-- **Cinnamon is the primary desktop** (`X11`/`X` on **Xvfb**), served by **`x11vnc`**
+- **XFCE is the primary desktop** (`X11`/`X` on **Xvfb**), served by **`x11vnc`**
   (`-forever -shared`). Being X11-native, classic tools just work: `xdotool` for input,
   `import`/`scrot` for real captures, and a **stable VNC/noVNC** that survives changes of
   the window size.
 - **Why not Wayland-headless for the remote?** Earlier builds used GNOME 50 (Wayland)
   headless with GNOME Remote Desktop (GRD) — it dropped VNC/noVNC connections and served a
-  gray framebuffer in the container. Moving the primary desktop to **X11 (Cinnamon)** made
+  gray framebuffer in the container. Moving the primary desktop to **X11 (XFCE)** made
   remote access and control robust. GRD and its shims were removed.
-- **GNOME was removed entirely.** The container is **Cinnamon-only** (X11); the Wayland
+- **GNOME was removed entirely.** The container is **XFCE-only** (X11); the Wayland
   headless (GNOME) path and its GRD/session internals were dropped because they were fragile
   and did not serve remote access in this container.
-- **Resilience.** `session.sh` supervises Xvfb, Cinnamon and x11vnc and restarts whichever
+- **Resilience.** `session.sh` supervises Xvfb, XFCE and x11vnc and restarts whichever
   exits (up to 20 times), logging to `/run/user/1000/session.log`.
 
 ---

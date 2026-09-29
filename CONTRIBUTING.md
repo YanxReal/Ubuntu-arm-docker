@@ -39,7 +39,7 @@ Useful day-to-day commands:
 
 ```bash
 make logs         # follow container logs
-make logs-x11vnc  # session log (Xvfb/Cinnamon/x11vnc)
+make logs-x11vnc  # session log (Xvfb/XFCE/x11vnc)
 make shell        # shell as the admin user
 make reload       # full recreate after changes
 ```
@@ -48,13 +48,13 @@ make reload       # full recreate after changes
 
 ```
 .
-├── Dockerfile              # Image definition (Ubuntu + Cinnamon/X11 + x11vnc + toolchain)
+├── Dockerfile              # Image definition (Ubuntu + XFCE/X11 + x11vnc + toolchain)
 ├── docker-compose.yml      # Service, ports, volumes and environment
 ├── Makefile                # User-facing automation (make install, make help, ...)
 ├── scripts/
 │   ├── entrypoint.sh       # PID 1: dbus, sshd, noVNC, supervision
-│   ├── session.sh          # Xvfb + Cinnamon (X11) + x11vnc + watchdog
-│   ├── desktop-setup.sh    # Cinnamon defaults (panel, browser, no screensaver)
+│   ├── session.sh          # Xvfb + XFCE (X11) + x11vnc + watchdog
+│   ├── desktop-setup.sh    # XFCE defaults (panel, browser, no screensaver)
 │   ├── dev                 # GUI wrapper for the graphical session
 │   └── assistant           # AI control (capture/OCR, click/type via X11, wd/WayDriver)
 ├── workspace/              # Bind-mounted source code (/workspace)
@@ -96,7 +96,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) where possib
 feat: add configurable virtual monitor size
 fix: restart VNC daemon when the port disappears
 docs: sync README.es.md with the English version
-build: pin the Cinnamon/X11 stack
+build: pin the XFCE/X11 stack
 chore: bump Node.js to 24
 ```
 
