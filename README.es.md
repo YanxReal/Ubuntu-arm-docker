@@ -241,7 +241,10 @@ ssh admin@localhost -p 2222 'assistant shot /tmp/s.png'
 | `assistant ocr [png]` | OCR de una captura (tesseract, spa+eng) |
 | `assistant open <app>` / `run <cmd>` | Lanza apps/comandos en la sesión gráfica |
 | `assistant status` | Estado y herramientas disponibles |
-| `assistant wd run --app <cmd> --shot out.png` | **Control headless de apps GTK** (WayDriver): sesión Mutter aislada, **captura PNG real** y operación por AT-SPI |
+| `assistant windows` / `winmove X Y` | Lista ventanas / mueve una ventana de forma fiable |
+| `assistant record [secs] [out.webm]` | Graba vídeo del escritorio (ffmpeg/x11grab) |
+| `assistant files` / `here <path>` | Lista/copia archivos a `/workspace/ai` (compartido con el host) |
+| `assistant wd run --app <cmd> --shot out.png` | **Control de apps GTK aisladas** (WayDriver): captura PNG real + AT-SPI |
 
 **`assistant wd` (WayDriver) — ojos y manos reales:** como la captura del compositor headless
 es limitada, este contenedor integra **[WayDriver](https://waydriver.io)** para que la IA pruebe y
@@ -262,6 +265,22 @@ make assistant ARGS="wd run --app helium --shot /tmp/web.png --sleep 4"
 **El input GUI es real aquí.** Como el escritorio principal corre en **X11**, `assistant`
 puede `shot` (capturar), `move`/`click`/`type` con `xdotool` y `ocr` — la IA controla el
 mismo escritorio que ves. `assistant wd` añade pruebas de apps GTK aisladas vía WayDriver.
+
+**Archivos y vídeo (control SSH total).** Las capturas y grabaciones caen en
+`/workspace/ai` (bind mount compartido con el host, visibles al instante); `assistant
+record` graba vídeo del escritorio (ffmpeg/x11grab). Transfiere cualquier archivo con
+scp/sftp:
+
+```bash
+scp -P 2222 local.txt admin@localhost:/workspace/            # subir
+scp -P 2222 admin@localhost:/workspace/ai/screen.png .       # bajar
+```
+
+**Servidor MCP (opcional, para agentes).** `scripts/mcp-assistant.py` expone `assistant`
+como herramientas nativas por MCP (stdio). Regístralo desde el host con:
+`"mcpServers": {"assistant": {"command": "ssh", "args": ["-p", "2222", "admin@localhost",
+"/usr/local/bin/mcp-assistant.py"]}}` — o ejecútalo dentro del contenedor con
+`ASSISTANT_LOCAL=1`.
 
 ---
 

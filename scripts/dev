@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ejecuta un comando dentro de la sesión gráfica (Wayland/X11/bus de sesión).
+# Ejecuta un comando dentro de la sesión gráfica (X11/Cinnamon + bus de sesión).
 # Uso: dev <comando> [args...]   ->   dev helium / dev gnome-terminal / dev cargo tauri dev
 set -euo pipefail
 

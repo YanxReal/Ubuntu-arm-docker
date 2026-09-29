@@ -81,7 +81,7 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         cinnamon-desktop-environment cinnamon-session cinnamon \
         xserver-xorg-core xserver-xorg-video-dummy xinit xauth dbus-x11 \
-        xvfb x11vnc xdotool scrot imagemagick feh \
+        xvfb x11vnc xdotool scrot imagemagick feh ffmpeg \
         mesa-utils libgl1-mesa-dri \
         xdg-desktop-portal \
         dconf-cli dconf-gsettings-backend gsettings-desktop-schemas libglib2.0-bin \

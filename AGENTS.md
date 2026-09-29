@@ -40,16 +40,32 @@ ssh admin@localhost -p 2222 'assistant <subcomando...>'
 | `assistant drag DX DY` | Arrastre del puntero (selección) |
 | `assistant windows` | Lista ventanas (la activa con `*`) |
 | `assistant winmove X Y [wid]` | Mueve una ventana de forma fiable (usa el WM) |
+| `assistant record [secs] [out.webm]` | Graba VÍDEO del escritorio (ffmpeg x11grab) |
+| `assistant files [subdir]` | Lista `/workspace` (compartido host↔contenedor) |
+| `assistant here <path> [nombre]` | Copia un archivo del contenedor a `/workspace/ai` |
 | `assistant wd run --app <cmd> --shot out.png` | Prueba apps GTK aisladas (WayDriver) |
 
 ### Flujo típico del agente
 
 1. `assistant status` → confirmar sesión.
 2. `assistant open <app>` → abrir lo que toque.
-3. `assistant shot /tmp/s.png` → ver el estado real del escritorio.
-4. `assistant ocr /tmp/s.png` → leer texto si hace falta.
+3. `assistant shot /workspace/ai/s.png` → captura real (el host la ve al momento).
+4. `assistant ocr /workspace/ai/s.png` → leer texto si hace falta.
 5. `assistant move X Y` + `assistant click X Y` / `assistant type "..."` → actuar.
 6. `assistant shot` de nuevo → verificar el resultado.
+7. `assistant record 10 /workspace/ai/v.webm` → grabar vídeo si se necesita.
+8. `assistant here <archivo>` → pasar un archivo al host (o `scp` directo).
+
+### Transferencia de archivos por SSH (control total)
+
+- `/workspace` es un **bind mount**: `assistant shot`/`record`/`here` guardan ahí y el
+  host los ve al instante.
+- scp (desde el host):
+  ```bash
+  scp -P 2222 local.txt admin@localhost:/workspace/          # subir
+  scp -P 2222 admin@localhost:/workspace/ai/screen.png .     # bajar
+  ```
+- sftp: `sftp -P 2222 admin@localhost` (password `admin`).
 
 ### Reglas
 

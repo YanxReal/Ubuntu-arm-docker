@@ -14,13 +14,11 @@
 #   - status              : estado de la sesión y herramientas
 #   - wd                  : pruebas de apps GTK aisladas vía WayDriver
 #
-# El input GUI (type/click/move) es limitado en este entorno headless (Wayland
-# no expone los protocolos virtual-keyboard/screencopy y GRD VNC es view-only),
-# así que estos subcomandos intentan lo posible y avisan si no es aplicable.
+# El input GUI (type/click/move) es REAL aquí, gracias a X11 + xdotool.
 #
 # Subcomandos:
 #   assistant status                 -> estado de la sesión y herramientas
-#   assistant shot [out.png]         -> captura pantalla completa (VNC)
+#   assistant shot [out.png]         -> captura pantalla completa (X11 real)
 #   assistant region X Y W H [out]   -> captura una región
 #   assistant ocr [png]              -> OCR de una captura (tesseract)
 #   assistant open <app>             -> lanza un app en la sesión (dev)
@@ -28,17 +26,27 @@
 #   assistant wd run --app <cmd>...  -> control headless de apps GTK (WayDriver):
 #                                       captura PNG real + click/type/read por
 #                                       AT-SPI en una sesión Mutter aislada
-#   assistant type "texto"           -> intenta escribir (limitado en headless)
-#   assistant key ctrl+c|super...    -> intenta atajo (limitado en headless)
+#   assistant type "texto"           -> escribe texto (xdotool, X11 real)
+#   assistant key ctrl+c|super...    -> atajo de teclado (xdotool)
 #   assistant click X Y / move X Y   -> puntero (X11 real)
 #   assistant drag DX DY             -> arrastre del puntero (selección)
 #   assistant windows                -> lista ventanas (activa * )
 #   assistant winmove X Y [wid]      -> MUEVE una ventana (fiable; usa el WM)
+#   assistant record [secs] [out]    -> graba VÍDEO del escritorio (ffmpeg/x11grab)
+#   assistant files [subdir]         -> listar archivos de /workspace (compartido con host)
+#   assistant here <path> [nombre]   -> copia un archivo a /workspace/ai para el host
+#
+# Transferencia por SSH (siempre disponible):
+#   scp -P 2222 local.txt admin@localhost:/workspace/
+#   scp -P 2222 admin@localhost:/workspace/ai/screen.png .
 #
 set -euo pipefail
 
 ENV_FILE="/run/user/$(id -u)/desktop-env"
-SHOT_DIR="${HOME:-/home/$(id -un)}/.assistant"
+# Directorio compartido con el HOST (bind mount): la IA/tú veis los archivos al momento
+SHOT_DIR="/workspace/ai"
+mkdir -p "${SHOT_DIR}" 2>/dev/null || true
+export SHOT_DIR
 
 if [ -r "${ENV_FILE}" ]; then
   set -a
@@ -186,6 +194,37 @@ cmd_winmove() {
     && echo "ok ventana ${wid} movida a (${x},${y})" || return 1
 }
 
+# ── vídeo (ffmpeg x11grab) ────────────────────────────────────────────────
+cmd_record() {
+  have_x || die "sin sesión X."
+  xneed ffmpeg || die "falta ffmpeg."
+  local secs="${1:-8}"
+  local out="${2:-${SHOT_DIR}/record.webm}"
+  mkdir -p "$(dirname "$out")"
+  echo "grabando ${secs}s -> ${out} ..."
+  ffmpeg -y -loglevel error -f x11grab -video_size "${RESOLUTION:-1920x1080}" \
+    -framerate 15 -i "${DISPLAY}" -t "${secs}" -c:v libvpx -b:v 1M "${out}" >/dev/null 2>&1 \
+    || { echo "✗ no se pudo grabar (¿ffmpeg?)" >&2; return 1; }
+  echo "ok $out ($(du -h "${out}" | cut -f1))"
+}
+
+# ── archivos compartidos (/workspace es bind mount con el host) ───────────
+cmd_files() {
+  local dir="${1:-}"
+  local base="/workspace${dir:+/${dir}}"
+  [ -d "${base}" ] || die "no existe ${base}"
+  echo "contenido de ${base}:"
+  ls -lah "${base}" 2>/dev/null | sed -n '1,40p'
+}
+
+cmd_here() {
+  local src="${1:?Uso: assistant here <path> [nombre]}"
+  local name="${2:-$(basename "${src}")}"
+  [ -f "${src}" ] || die "no existe ${src}"
+  command -v cp >/dev/null 2>&1
+  cp "${src}" "${SHOT_DIR}/${name}" && echo "ok ${SHOT_DIR}/${name}  (para el host: scp -P 2222 admin@localhost:/workspace/ai/${name} . )"
+}
+
 # ── dispatch ───────────────────────────────────────────────────────────────
 case "${1:-help}" in
   status)   cmd_status ;;
@@ -203,6 +242,9 @@ case "${1:-help}" in
   drag)     cmd_drag "${2:-}" "${3:-}" ;;
   windows)  cmd_windows ;;
   winmove)  cmd_winmove "${2:-}" "${3:-}" "${4:-}" ;;
+  record)   cmd_record "${2:-}" "${3:-}" ;;
+  files)    cmd_files "${2:-}" ;;
+  here)     cmd_here "${2:-}" "${3:-}" ;;
   help|-h|--help) cmd_help ;;
   *) echo "Subcomando desconocido: $1" >&2; cmd_help >&2; exit 1 ;;
 esac

@@ -241,6 +241,8 @@ ssh admin@localhost -p 2222 'assistant shot /tmp/s.png'
 | `assistant open <app>` / `run <cmd>` | Launches apps/commands in the graphical session |
 | `assistant status` | Session and tools status |
 | `assistant windows` / `winmove X Y` | Lists windows / moves a window reliably |
+| `assistant record [secs] [out.webm]` | Records desktop video (ffmpeg/x11grab) |
+| `assistant files` / `here <path>` | Lists/copies files to `/workspace/ai` (shared with the host) |
 | `assistant wd run --app <cmd> --shot out.png` | Isolated GTK-app testing (WayDriver): real PNG capture + AT-SPI control |
 
 **`assistant wd` (WayDriver)** isolates GTK4 apps (Helium, calculator, your Tauri apps) in
@@ -260,6 +262,21 @@ make assistant ARGS="wd run --app helium --shot /tmp/web.png --sleep 4"
 **GUI input is real here.** Because the primary desktop runs on **X11**, `assistant`
 can `shot` (capture), `move`/`click`/`type` with `xdotool`, and `ocr` — the AI drives the
 same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver.
+
+**Files & video (full SSH control).** Captures and recordings land in `/workspace/ai`,
+which is a bind mount shared with the host, so you see them immediately; `assistant
+record` grabs desktop video (ffmpeg/x11grab). Transfer any file with scp/sftp:
+
+```bash
+scp -P 2222 local.txt admin@localhost:/workspace/            # upload
+scp -P 2222 admin@localhost:/workspace/ai/screen.png .       # download
+```
+
+**MCP server (optional, for agents).** `scripts/mcp-assistant.py` exposes `assistant` as
+native tools over MCP (stdio). Register it from the host with:
+`"mcpServers": {"assistant": {"command": "ssh", "args": ["-p", "2222", "admin@localhost",
+"/usr/local/bin/mcp-assistant.py"]}}` — or run it inside the container with
+`ASSISTANT_LOCAL=1`.
 
 ---
 

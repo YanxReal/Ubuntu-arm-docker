@@ -51,6 +51,7 @@ start_cinnamon() {
     XDG_SESSION_ID=1 XDG_SESSION_CLASS=user XDG_SESSION_TYPE=x11 \
     XDG_SEAT=seat0 XDG_CURRENT_DESKTOP=Cinnamon \
     LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe \
+    MESA_GL_VERSION_OVERRIDE=3.3 MESA_GLES_VERSION_OVERRIDE=3.0 \
     cinnamon-session --session cinnamon >/dev/null 2>&1 &
   CINN_PID=$!
 }
@@ -71,9 +72,18 @@ printf '%s\n%s\n' "${VNC_PASSWORD}" "${VNC_PASSWORD}" | x11vnc -storepasswd "${V
 chown "$(id -u):$(id -g)" "${AUTH_FILE}" 2>/dev/null || true
 
 start_xvfb
-sleep 2
-[[ -S "/tmp/.X11-unix/X${DISPLAY_NR}" || -S "${XDG_RUNTIME}/X${DISPLAY_NR}" ]] || log "aviso: socket X :${DISPLAY_NR} no visible"
+# Esperamos al socket X antes de lanzar Cinnamon (más robusto que un sleep)
+for i in $(seq 1 10); do
+  [ -e "/tmp/.X11-unix/X${DISPLAY_NR}" ] && break
+  sleep 1
+done
+log "socket X :${DISPLAY_NR} presente"
 start_cinnamon
+# Aplicar defaults del escritorio (Helium por defecto, favoritos, etc.)
+sudo -u "$(id -un)" -H env \
+  DISPLAY=":${DISPLAY_NR}" XAUTHORITY="${X11_AUTH}" XDG_RUNTIME_DIR="${XDG_RUNTIME}" \
+  DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME}/bus" \
+  /usr/local/bin/desktop-setup.sh >/dev/null 2>&1 || true
 # x11vnc no arranca hasta que el X esté listo
 for i in $(seq 1 30); do
   [ -e "/tmp/.X11-unix/X${DISPLAY_NR}" ] && break

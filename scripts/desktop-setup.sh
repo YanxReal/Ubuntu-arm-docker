@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Valores por defecto de Cinnamon: sin bloqueo/screensaver, sin animaciones,
-# sin compositor (Xvfb no tiene GL), Helium como navegador por defecto.
+# Helium como navegador por defecto. Se ejecuta desde session.sh al arrancar.
 set -uo pipefail
 
 log() { printf '[desktop-setup] %s\n' "$*"; }
@@ -11,8 +11,8 @@ gsettings set org.cinnamon.screensaver idle-activation-enabled false || true
 gsettings set org.cinnamon.desktop.interface enable-animations false || true
 gsettings set org.cinnamon.desktop.interface color-scheme 'prefer-dark' || true
 
-# Compose en vivo (ventanas se mueven en tiempo real). Con llvmpipe (GL software)
-# el compositor de muffin funciona en Xvfb; si fallara, muffin degrada a recuadro.
+# Nota: la composición en vivo de ventanas (drag) depende del entorno; en
+# Xvfb+llvmpipe ningún compositor compone (ver README), lo demás funciona.
 
 # --- Navegador por defecto: Helium ------------------------------------------
 HELIUM_DESKTOP="$(ls /usr/share/applications 2>/dev/null | grep -i '^helium.*\.desktop$' | head -n1)"
