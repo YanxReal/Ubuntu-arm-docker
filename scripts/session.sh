@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Sesión de escritorio Cinnamon en X11 (Xvfb) + x11vnc (VNC estable).
-# Sustituye a la sesión GNOME/Wayland-headless + GRD.
 set -Eeuo pipefail
 
 XDG_RUNTIME="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"

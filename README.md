@@ -71,8 +71,8 @@ Everything is orchestrated with a single `make install`.
 ## Features
 
 - **Ubuntu 26.04 LTS (arm64)** base image, always the latest LTS release line.
-- **Cinnamon 6.4** desktop (a GNOME 3 fork) over a stable **X11 stack** — panel,
-  Nemo file manager, themes, GNOME apps (Terminal, Text Editor, Calculator, System
+- **Cinnamon 6.4** desktop over a stable **X11 stack** — panel,
+  Nemo file manager, themes, classic apps (Terminal, Text Editor, Calculator, System
   Monitor, Files), desktop icons, and more.
 - **Estable y robusto**: corre sobre **Xvfb** y se sirve con **x11vnc** (`-forever
   -shared`); no hay GRD/Wayland-headless → conexiones VNC/noVNC **estables** (aguantan
@@ -293,13 +293,11 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
   (`-forever -shared`). Being X11-native, classic tools just work: `xdotool` for input,
   `import`/`scrot` for real captures, and a **stable VNC/noVNC** that survives changes of
   the window size.
-- **Why not Wayland-headless for the remote?** Earlier builds used GNOME 50 (Wayland)
-  headless with GNOME Remote Desktop (GRD) — it dropped VNC/noVNC connections and served a
-  gray framebuffer in the container. Moving the primary desktop to **X11 (Cinnamon)** made
-  remote access and control robust. GRD and its shims were removed.
-- **GNOME was removed entirely.** The container is **Cinnamon-only** (X11); the Wayland
-  headless (GNOME) path and its GRD/session internals were dropped because they were fragile
-  and did not serve remote access in this container.
+- **Why not Wayland-headless for the remote?** Headless Wayland sessions are fragile and
+  did not serve remote access reliably in this container. The desktop is **Cinnamon on
+  X11 (Xvfb)** for a stable VNC/noVNC and full AI control.
+- **Cinnamon-only.** The container ships just the Cinnamon desktop; no other
+  session/WM is installed.
 - **Resilience.** `session.sh` supervises Xvfb, Cinnamon and x11vnc and restarts whichever
   exits (up to 20 times), logging to `/run/user/1000/session.log`.
 
@@ -341,7 +339,7 @@ Run `make` (or `make help`) to list everything:
 | `make reload` | `down` + `build` + `up` (full recreate). |
 | `make status` | Show container status and noVNC HTTP check. |
 | `make logs` | Follow container logs. |
-| `make logs-x11vnc` | Tail the GNOME Remote Desktop log. |
+| `make logs-x11vnc` | Tail the session log (Xvfb/Cinnamon/x11vnc). |
 | `make shell` | Open a shell as `admin` inside the container. |
 | `make ssh` | Open an SSH session to the container. |
 | `make dev ARGS="gnome-terminal"` | Launch a GUI app inside the graphical session. |
@@ -455,9 +453,9 @@ Released under the **MIT License** — see [LICENSE](LICENSE) for details.
 
 ## Acknowledgements
 
-- [Ubuntu](https://ubuntu.com/) and [GNOME](https://www.gnome.org/) for the desktop.
-- [GNOME Remote Desktop](https://gitlab.gnome.org/GNOME/gnome-remote-desktop) for the
-  headless VNC backend.
+- [Ubuntu](https://ubuntu.com/) for the base system and
+  [Cinnamon](https://projects.linuxmint.com/cinnamon/) for the desktop.
+- [x11vnc](https://github.com/LibVNC/x11vnc) for the stable remote access.
 - [noVNC](https://github.com/novnc/noVNC) and
   [websockify](https://github.com/novnc/websockify) for browser-based access.
 - [Helium](https://helium.computer/) for the default browser.

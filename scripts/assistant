@@ -2,15 +2,17 @@
 #
 # assistant — capa de control del escritorio para agentes/IA
 # ============================================================
-# Da a un agente (humano o IA) "vista" y control sobre el escritorio GNOME
-# (Wayland headless). El contenedor permite VARIOS clientes VNC a la vez
-# (GRD compilado con max_global_connections>=2), así que puedes seguir mirando
-# por noVNC/VNC mientras la IA captura sin quitarte tu sesión.
+# Da a un agente (humano o IA) "vista" y control sobre el escritorio
+# Cinnamon (X11). El contenedor sirve el desktop por x11vnc (multi-cliente),
+# así que puedes seguir mirando por noVNC/VNC mientras la IA captura y actúa.
 #
 # Lo que funciona de forma ROBUSTA aquí:
-#   - shot / region / ocr : captura por VNC + OCR (tesseract)
-#   - run / open          : lanza apps o comandos en la sesión gráfica (dev)
+#   - shot / region / ocr : captura real por X11 (import/scrot) + OCR (tesseract)
+#   - move / click / type : input real por xdotool (X11)
+#   - windows / winmove   : listar y mover ventanas de forma fiable
+#   - open / run          : lanza apps o comandos en la sesión gráfica (dev)
 #   - status              : estado de la sesión y herramientas
+#   - wd                  : pruebas de apps GTK aisladas vía WayDriver
 #
 # El input GUI (type/click/move) es limitado en este entorno headless (Wayland
 # no expone los protocolos virtual-keyboard/screencopy y GRD VNC es view-only),

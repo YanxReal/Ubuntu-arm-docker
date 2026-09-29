@@ -71,8 +71,8 @@ Todo se orquesta con un solo `make install`.
 ## Características
 
 - Imagen base **Ubuntu 26.04 LTS (arm64)**, siempre dentro de la última línea LTS.
-- **Cinnamon 6.4** (fork de GNOME 3) sobre un stack **X11** estable: panel, Nemo, temas y
-  apps GNOME (Terminal, Text Editor, Calculadora, Monitor del sistema, Archivos).
+- **Cinnamon 6.4** sobre un stack **X11** estable: panel, Nemo, temas y
+  apps clásicas (Terminal, Text Editor, Calculadora, Monitor del sistema, Archivos).
 - **Estable y robusto**: corre sobre **Xvfb** y se sirve con **x11vnc** (`-forever
   -shared`); sin GRD/Wayland-headless → conexiones VNC/noVNC **estables** (aguantan cambios
   de tamaño) y captura real en color.
@@ -200,8 +200,8 @@ En ambos casos, `make install`:
 > En noVNC, pulsa **Connect** y escribe la contraseña. El primer frame puede tardar un
 > par de segundos; mueve el puntero si la pantalla parece inactiva.
 
-> ⚠️ **Un cliente VNC a la vez.** GNOME Remote Desktop no comparte sesión: desconecta
-> noVNC o tu cliente VNC antes de abrir otro.
+> ℹ️ **VNC multi-cliente.** `x11vnc` corre con `-shared`: puedes mirar por noVNC
+> mientras otro cliente (o la IA) está conectado a la vez.
 
 ### SSH
 
@@ -292,13 +292,11 @@ mismo escritorio que ves. `assistant wd` añade pruebas de apps GTK aisladas ví
   **`x11vnc`** (`-forever -shared`). Al ser X11-native funcionan las herramientas clásicas:
   `xdotool` (input), `import`/`scrot` (captura real) y un **VNC/noVNC estable** que aguanta
   cambios de tamaño de la ventana.
-- **Por qué no Wayland-headless para remoto:** versiones previas usaban GNOME 50 (Wayland)
-  headless con GNOME Remote Desktop (GRD) — caía conexiones y servía un framebuffer gris en
-  el contenedor. Mover el escritorio principal a **X11 (Cinnamon)** hizo el remoto y el
-  control robustos. Se eliminaron GRD y sus parches.
-- **GNOME se eliminó por completo.** El contenedor es **solo Cinnamon** (X11); la vía Wayland
-  headless (GNOME) y sus internos de GRD se retiraron por ser frágiles y no servir el remoto
-  en este contenedor.
+- **Por qué no Wayland-headless para remoto:** las sesiones Wayland headless son frágiles
+  y no servían el remoto de forma fiable en este contenedor. El escritorio es **Cinnamon
+  en X11 (Xvfb)** para un VNC/noVNC estable y control total de la IA.
+- **Solo Cinnamon.** El contenedor trae únicamente el escritorio Cinnamon; ninguna otra
+  sesión/WM está instalada.
 - **Resiliencia.** `session.sh` supervisa Xvfb, Cinnamon y x11vnc y reinicia el que salga
   (hasta 20 veces), registrando en `/run/user/1000/session.log`.
 
@@ -341,7 +339,7 @@ Ejecuta `make` (o `make help`) para verlos todos:
 | `make reload` | `down` + `build` + `up` (recreación completa). |
 | `make status` | Muestra el estado del contenedor y comprueba noVNC por HTTP. |
 | `make logs` | Sigue los logs del contenedor. |
-| `make logs-x11vnc` | Muestra el log de GNOME Remote Desktop. |
+| `make logs-x11vnc` | Muestra el log de la sesión (Xvfb/Cinnamon/x11vnc). |
 | `make shell` | Abre una shell como `admin` dentro del contenedor. |
 | `make ssh` | Abre una sesión SSH contra el contenedor. |
 | `make dev ARGS="gnome-terminal"` | Lanza una app gráfica dentro de la sesión gráfica. |
@@ -456,9 +454,9 @@ Publicado bajo la **licencia MIT** — consulta [LICENSE](LICENSE) para más det
 
 ## Agradecimientos
 
-- [Ubuntu](https://ubuntu.com/) y [GNOME](https://www.gnome.org/) por el escritorio.
-- [GNOME Remote Desktop](https://gitlab.gnome.org/GNOME/gnome-remote-desktop) por el
-  backend VNC headless.
+- [Ubuntu](https://ubuntu.com/) por el sistema base y
+  [Cinnamon](https://projects.linuxmint.com/cinnamon/) por el escritorio.
+- [x11vnc](https://github.com/LibVNC/x11vnc) por el acceso remoto estable.
 - [noVNC](https://github.com/novnc/noVNC) y
   [websockify](https://github.com/novnc/websockify) por el acceso desde el navegador.
 - [Helium](https://helium.computer/) por el navegador por defecto.

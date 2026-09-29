@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 #
-# Ubuntu Desktop (Cinnamon en X11, principal; GNOME 50 secundario) - arm64
+# Ubuntu Desktop (Cinnamon en X11) - arm64
 # - Escritorio Cinnamon en X11 (Xvfb) + x11vnc stable (VNC/noVNC)
-# - GNOME 50 (Wayland) instalado como sesión secundaria/opcional
 # - Usuario: admin / admin    VNC y noVNC: admin
 # - Helium como navegador por defecto (sin Firefox/snap)
 # - Toolchain para apps Tauri v2: Rust, Node, pnpm, yarn, Tauri CLI
@@ -221,7 +220,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
-# 13) WayDriver — control headless de apps GTK (GNOME/Mutter) para la IA
+# 13) WayDriver — control headless de apps GTK (Wayland/Mutter) para la IA
 #     waydriver-mcp: lanza una sesión Mutter aislada, captura PNG real por
 #     PipeWire (mantiene el scrEcast vivo -> Mutter compone) y opera la app
 #     por AT-SPI + input real (RemoteDesktop).

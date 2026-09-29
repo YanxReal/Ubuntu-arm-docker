@@ -1,5 +1,5 @@
 # ============================================================================
-#  Ubuntu ARM Docker — Cinnamon (principal) + GNOME 50 (secundario) en arm64
+#  Ubuntu ARM Docker — escritorio Cinnamon (X11) en arm64
 #  Atajos: `make` muestra la ayuda, `make install` lo pone todo en marcha.
 # ============================================================================
 

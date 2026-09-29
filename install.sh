@@ -36,7 +36,7 @@ show_help() {
 Ubuntu ARM Docker — one-line installer
 
 Clones https://github.com/YanxReal/Ubuntu-arm-docker and runs `make install`
-to build and start a full Ubuntu 26.04 + Cinnamon desktop (GNOME 50 secondary) in Docker (arm64).
+to build and start a full Ubuntu 26.04 + Cinnamon desktop over a stable X11 stack in Docker (arm64).
 
 Works on Linux, macOS and Windows (Git Bash / MSYS2 / WSL). On native Windows
 PowerShell, use install.ps1 instead.

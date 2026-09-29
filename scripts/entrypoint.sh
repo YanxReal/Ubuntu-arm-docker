@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Arranque del contenedor: dbus, sesión GNOME headless + noVNC.
+# Arranque del contenedor: dbus, sesión Cinnamon (X11) + noVNC.
 set -Eeuo pipefail
 
 USERNAME="${USERNAME:-admin}"
@@ -28,7 +28,7 @@ mkdir -p /run/dbus
 rm -f /run/dbus/system_bus_socket /run/dbus/pid
 dbus-daemon --system --fork 2>/dev/null || log "aviso: dbus de sistema no disponible"
 
-# --- GNOME Shell 50 intenta usar logind si ve /run/systemd/seats ----------
+# --- Cinnamon/muffin intenta usar logind si ve /run/systemd/seats ----------
 # En el contenedor no hay systemd/logind y el shell abortaría: lo ocultamos.
 rm -rf /run/systemd/seats /run/systemd/sessions /run/systemd/users
 

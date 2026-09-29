@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-wdctl — control headless de apps GTK (GNOME/Mutter) para la IA.
+wdctl — control headless de apps GTK (Wayland/Mutter) para la IA.
 Usa WayDriver (waydriver-mcp) en un único proceso para lanzar una sesión
 Wayland aislada, capturar PNG real y operar la app (AT-SPI + input).
 
