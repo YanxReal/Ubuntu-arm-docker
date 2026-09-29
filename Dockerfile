@@ -251,3 +251,12 @@ WORKDIR /workspace
 EXPOSE 6080 5900
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+
+# Metadatos del artefacto (OCI) + salud del contenedor
+LABEL org.opencontainers.image.source="https://github.com/YanxReal/Ubuntu-arm-docker" \
+      org.opencontainers.image.title="Ubuntu ARM Docker (Cinnamon desktop)" \
+      org.opencontainers.image.description="Ubuntu 26.04 + Cinnamon (X11) desktop en Docker para arm64 con noVNC/VNC/SSH, Helium y toolchain Tauri v2" \
+      org.opencontainers.image.version="1.0.0"
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 \
+  CMD curl -fsS http://localhost:6080/vnc.html >/dev/null || exit 1

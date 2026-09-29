@@ -98,7 +98,7 @@ Everything is orchestrated with a single `make install`.
 |---|---|
 | **Architecture** | `linux/arm64` (aarch64) — **native** on Apple Silicon and ARM Linux/Windows. Runs on x86_64 hosts via QEMU emulation (slower). |
 | **Docker** | Docker Desktop (macOS/Windows) or Docker Engine 24+ with Compose v2 (Linux). |
-| **Disk** | ~10 GB free for the image and volumes. |
+| **Disk** | ~5.5 GB for the image, plus a few GB for the volumes (home + workspace). |
 | **Memory** | 4 GB RAM recommended for the container (desktop + browser). |
 | **Host ports** | `6080` (noVNC), `5902` (VNC), `2222` (SSH) — all configurable. |
 
@@ -346,6 +346,7 @@ All settings live in `.env` (created automatically from `.env.example`):
 | `VNC_HOST_PORT` | `5902` | Host port mapped to VNC `5900` (`5900` is often taken by macOS Screen Sharing). |
 | `NOVNC_HOST_PORT` | `6080` | Host port for the noVNC web UI. |
 | `SSH_HOST_PORT` | `2222` | Host port mapped to container SSH `22`. |
+| `VNC_BIND` / `NOVNC_BIND` / `SSH_BIND` | `0.0.0.0` | Bind address for the host ports — use `127.0.0.1` for local-only access. |
 | `NODE_MAJOR` | `24` | Node.js major version installed in the image. |
 
 > After editing `.env`, run `make reload` to rebuild and restart with the new values.
