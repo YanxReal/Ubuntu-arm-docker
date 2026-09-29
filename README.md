@@ -301,6 +301,16 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
 - **Resilience.** `session.sh` supervises Xvfb, Cinnamon and x11vnc and restarts whichever
   exits (up to 20 times), logging to `/run/user/1000/session.log`.
 
+### Why GNOME was removed
+
+GNOME 50 is **Wayland-only**. Running it in this headless container required serving the
+remote view over Wayland (GNOME Remote Desktop — GRD), which proved fragile here: grey
+framebuffer, VNC/noVNC disconnections, and limited input control. In short, a Wayland
+desktop inside a container without GPU/systemd-logind does not serve remote access
+reliably. The project therefore uses **Cinnamon on X11 (Xvfb + x11vnc)**: stable
+VNC/noVNC, real captures and input, and full AI control. The GNOME *applications*
+(Terminal, Text Editor, Calculator, …) remain available inside the Cinnamon desktop.
+
 ---
 
 ## Configuration
