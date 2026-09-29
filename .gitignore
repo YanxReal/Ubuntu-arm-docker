@@ -1,13 +1,59 @@
-# Entorno local (se crea depuis .env.example)
-.env
+# ===========================================================================
+# .gitignore — Ubuntu ARM Docker (Cinnamon)
+# Todo lo local/efímero queda fuera del repo; lo importante se sube.
+# ===========================================================================
 
-# Volcados del workspace
+# --- Entorno local (se crea desde .env.example) -----------------------------
+.env
+.env.*
+!.env.example
+
+# --- Workspace (bind mount con el host: contenido del usuario) --------------
+# El workspace es para TU trabajo (templates, código); no se commitea.
 workspace/*
 !workspace/.gitkeep
 
-# macOS
+# --- macOS ------------------------------------------------------------------
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Python (bytecode / caches)
+# --- Python -----------------------------------------------------------------
 __pycache__/
 *.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Rust / build ------------------------------------------------------------
+target/
+dist/
+build/
+*.o
+*.a
+
+# --- Node / pnpm --------------------------------------------------------------
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+
+# --- Editores / IDE -----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Logs / temporales -------------------------------------------------------
+*.log
+*.tmp
+*.cache
+
+# --- Coincidencias de herramientas -------------------------------------------
+coverage/
+htmlcov/
+.tox/
