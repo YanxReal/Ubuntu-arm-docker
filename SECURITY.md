@@ -21,7 +21,7 @@ Include, when possible:
 
 - A description of the issue and its impact.
 - Steps to reproduce (commands, configuration, versions).
-- Any relevant logs (`make logs`, `make logs-grd`).
+- Any relevant logs (`make logs`, `make logs-x11vnc`).
 - Suggested mitigations, if you have them.
 
 You can expect an initial response within a few days. Please allow time for a fix before
@@ -57,3 +57,28 @@ If you deploy this beyond your machine, at minimum:
 The image builds on Ubuntu 26.04 LTS, the Cinnamon desktop (X11), x11vnc, noVNC,
 websockify, Helium, Rust, and Node.js. Reports about vulnerable dependencies are welcome
 and will be triaged like any other security report.
+
+## Before running `curl … | bash` (one-line installers)
+
+The quick installers pipe the script straight into your shell, which is convenient but
+runs **whatever is on `main` at that moment** — you are trusting this repository
+implicitly. Do not do this blindly:
+
+1. **Review before running**: download the script and read it first:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/main/install.sh -o install.sh
+   # (review install.sh, then:)
+   bash install.sh
+   ```
+2. **Pin a release instead of `main`** when you can (e.g. `v1.0.0`) so the code you run
+   is reviewed and tagged:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/YanxReal/Ubuntu-arm-docker/v1.0.0/install.sh | bash
+   ```
+3. **Check integrity** once a release exists: compare the installer's SHA-256 against the
+   value published in the [release notes](https://github.com/YanxReal/Ubuntu-arm-docker/releases).
+   (`shasum -a 256 install.sh` on macOS, `sha256sum` on Linux.)
+4. Run it in an **isolated test container first** if this is a production-like
+   environment. This project is designed for local development.
+5. On Linux, consider `systemd-run`/`bubblewrap` wrapping; on Windows, review `install.ps1`
+   the same way before `irm … | iex`.

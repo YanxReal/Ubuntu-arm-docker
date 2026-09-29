@@ -197,6 +197,13 @@ En ambos casos, `make install`:
 | **SSH** | `ssh admin@localhost -p 2222` | Usuario: **`admin`** · Contraseña: **`admin`** |
 | **Usuario del escritorio** | — | Usuario `admin` · Contraseña `admin` · `sudo` sin contraseña |
 
+> ⚠️ **Son credenciales por defecto de desarrollo — cámbialas antes de exponer los
+> puertos.** El contenedor publica en todas las interfaces del host (`0.0.0.0`) por
+> defecto: si abres los puertos a tu LAN/Internet, cualquiera que llegue sabe que son
+> `admin`. Pon una `VNC_PASSWORD` real, una contraseña real de `admin` y, si quieres,
+> bindea a `127.0.0.1` con las vars `*_BIND` del `.env` (ver [SECURITY.md](SECURITY.md)).
+> Para uso solo local, los valores por defecto están bien.
+
 > En noVNC, pulsa **Connect** y escribe la contraseña. El primer frame puede tardar un
 > par de segundos; mueve el puntero si la pantalla parece inactiva.
 
