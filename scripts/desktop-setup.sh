@@ -1,23 +1,18 @@
 #!/usr/bin/env bash
-# Valores por defecto de XFCE: compositor Xfwm4 activo (drag de ventanas en
-# vivo), sin screensaver/bloqueo, Helium como navegador por defecto.
+# Valores por defecto de Cinnamon: sin bloqueo/screensaver, sin animaciones,
+# sin compositor (Xvfb no tiene GL), Helium como navegador por defecto.
 set -uo pipefail
 
 log() { printf '[desktop-setup] %s\n' "$*"; }
-export DISPLAY=":${DISPLAY_NR:-1}"
 
-# --- Composición: la pone picom (backend xrender) en session.sh; xfwm4 deja
-# su compositor apagado (rechaza llvmpipe). Workspaces: 4 ----------------------
-command -v xfconf-query >/dev/null 2>&1 && {
-  xfconf-query -c xfwm4 -p /general/workspace_count -s 4 2>/dev/null || true
-  xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
-}
+# --- Cinnamon: inactividad y screensaver off ---------------------------------
+gsettings set org.cinnamon.desktop.session idle-delay 0 || true
+gsettings set org.cinnamon.screensaver idle-activation-enabled false || true
+gsettings set org.cinnamon.desktop.interface enable-animations false || true
+gsettings set org.cinnamon.desktop.interface color-scheme 'prefer-dark' || true
 
-# --- Sin screensaver / bloqueo / animaciones ----------------------------------
-command -v xfconf-query >/dev/null 2>&1 && {
-  xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -s false 2>/dev/null || true
-}
-gsettings set org.gnome.desktop.screensaver idle-activation-enabled false 2>/dev/null || true
+# Compose en vivo (ventanas se mueven en tiempo real). Con llvmpipe (GL software)
+# el compositor de muffin funciona en Xvfb; si fallara, muffin degrada a recuadro.
 
 # --- Navegador por defecto: Helium ------------------------------------------
 HELIUM_DESKTOP="$(ls /usr/share/applications 2>/dev/null | grep -i '^helium.*\.desktop$' | head -n1)"
@@ -26,12 +21,19 @@ if [ -z "${HELIUM_DESKTOP}" ]; then
 fi
 if [ -n "${HELIUM_DESKTOP}" ]; then
   log "navegador por defecto: ${HELIUM_DESKTOP}"
+  export DISPLAY=":${DISPLAY_NR:-1}"
   xdg-settings set default-web-browser "${HELIUM_DESKTOP}" || true
   xdg-mime default "${HELIUM_DESKTOP}" \
     x-scheme-handler/http x-scheme-handler/https text/html \
     x-scheme-handler/about x-scheme-handler/unknown || true
 else
   log "aviso: no se encontró el .desktop de Helium"
+fi
+
+# --- Favoritos en el panel de Cinnamon (applet-launcher) ---------------------
+if command -v dconf >/dev/null 2>&1; then
+  dconf write /org/cinnamon/favorites \
+    "['${HELIUM_DESKTOP:-helium.desktop}', 'nemo.desktop', 'gnome-terminal.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop']" 2>/dev/null || true
 fi
 
 log "ajustes aplicados"

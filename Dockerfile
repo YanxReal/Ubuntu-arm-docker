@@ -74,15 +74,13 @@ RUN set -eux; \
     chmod 0440 "/etc/sudoers.d/90-${USERNAME}"
 
 # ---------------------------------------------------------------------------
-# 4) Escritorio XFCE (X11-native, compositor Xfwm4 que compone en Xvfb) + X + remoto
-#    x11vnc/xdotool/scrot/Xvfb: VNC sólido, input real, drag de ventanas en vivo.
+# 4) Escritorio Cinnamon (X11-native, estable en contenedor) + X + remoto
+#    x11vnc/xdotool/scrot/Xvfb: VNC sólido, input real y captura sin GRD.
 # ---------------------------------------------------------------------------
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        xfce4 xfce4-goodies xfwm4 xfce4-session xfce4-panel xfdesktop4 \
-        xfce4-terminal xfce4-settings thunar \
-        x11-utils \
+        cinnamon-desktop-environment cinnamon-session cinnamon \
         xserver-xorg-core xserver-xorg-video-dummy xinit xauth dbus-x11 \
         xvfb x11vnc xdotool scrot imagemagick feh \
         mesa-utils libgl1-mesa-dri \

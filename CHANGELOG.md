@@ -9,15 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Escritorio: XFCE (X11) en vez de GNOME/Wayland.** Motivo: la sesión Wayland
+- **Escritorio: Cinnamon (X11) en vez de GNOME/Wayland.** Motivo: la sesión Wayland
   headless con GNOME Remote Desktop (GRD) era frágil en el contenedor (desconexiones
-  VNC/noVNC, framebuffer gris, input limitado). Ahora el escritorio es **XFCE** (ligero,
-  X11-native) corriendo sobre **Xvfb**, servido por **x11vnc** (VNC estable,
+  VNC/noVNC, framebuffer gris, input limitado). Ahora el escritorio es **Cinnamon** (fork
+  de GNOME 3, X11-native) corriendo sobre **Xvfb**, servido por **x11vnc** (VNC estable,
   `-forever -shared`) y controlado con **xdotool/import**.
-- **GNOME 50 se retiró por completo** del stack: el contenedor queda **solo XFCE (X11)**.
+- **GNOME 50 se retiró por completo** del stack: el contenedor queda **solo Cinnamon (X11)**.
   La vía Wayland headless (gnome-shell/GRD/RDP) no servía el remoto en arm64 y se eliminó.
-- La imagen se renombra a `ubuntu-desktop-xfce:26.04`; docs y scripts se alinean a
-  "solo XFCE" (se eliminan las referencias a GNOME/GRD como base).
+- La imagen se renombra a `ubuntu-desktop-cinnamon:26.04`; docs y scripts se alinean a
+  "solo Cinnamon" (se eliminan las referencias a GNOME/GRD como base).
 - Eliminado el build de **GNOME Remote Desktop** y sus parches (`dup()`, multi-cliente,
   RGBA) y los shims `fd-guard`/`grd-headless`. Ya no se usan.
 - **VNC/noVNC estables** (validado: conexión que aguanta 12 s y varios `SetDesktopSize`
@@ -26,11 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   color) y `assistant move/click/type` vía **xdotool** sobre el escritorio.
 - **Control de ventanas**: `assistant windows` (lista ventanas) y `assistant winmove X Y`
   mueve una ventana de forma fiable vía el WM (`xdotool windowmove`; el drag de puntero no
-  mueve ventanas en xfwm4).
-- **Limitación conocida (compositing):** ningún compositor (muffin, xfwm4, picom/xrender)
-  compone sobre **Xvfb + llvmpipe** (rechazan el render por software), así que el arrastre
-  de ventanas muestra el contorno clásico y la ventana encaja al soltar. Es una limitación
-  del display virtual sin GPU; el resto funciona igual.
+  mueve ventanas en muffin).
+- **Compositor de Cinnamon activado** (con render por software llvmpipe): las ventanas se
+  mueven **en tiempo real** al arrastrarlas, en vez del recuadro de contorno que salía al
+  tener el compositing desactivado por los problemas de GL en Xvfb.
 - `assistant` deja de usar VNC/vncdotool; `waydriver-mcp` se mantiene para probar apps GTK
   aisladas.
 
