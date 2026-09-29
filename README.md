@@ -74,9 +74,9 @@ Everything is orchestrated with a single `make install`.
 - **Cinnamon 6.4** desktop over a stable **X11 stack** — panel,
   Nemo file manager, themes, classic apps (Terminal, Text Editor, Calculator, System
   Monitor, Files), desktop icons, and more.
-- **Estable y robusto**: corre sobre **Xvfb** y se sirve con **x11vnc** (`-forever
-  -shared`); no hay GRD/Wayland-headless → conexiones VNC/noVNC **estables** (aguantan
-  cambios de tamaño) y captura en color real.
+- **Stable and robust**: runs on **Xvfb** and is served by **x11vnc** (`-forever -shared`);
+  no Wayland-headless/GRD → **stable** VNC/noVNC connections (they survive window resize)
+  and real color captures.
 - **noVNC + websockify** on port `6080` and native VNC on port `5900`
   (published to the host as `5902` by default).
 - **OpenSSH server** with password authentication, exposing full shell control.
@@ -84,11 +84,11 @@ Everything is orchestrated with a single `make install`.
 - **Tauri v2 system dependencies**: WebKitGTK 4.1, GTK3, Ayatana AppIndicator,
   librsvg, libxdo, OpenSSL, libsoup-3, and more.
 - **Software rendering** with Mesa llvmpipe over Xvfb — no GPU required.
-- **AI control real**: `assistant shot/ocr` (captura X11) y `assistant move/click/type`
-  vía **xdotool** sobre el escritorio; además WayDriver para probar apps GTK aisladas.
+- **Real AI control**: `assistant shot/ocr` (X11 capture) and `assistant move/click/type`
+  via **xdotool** on the desktop; plus WayDriver for isolated GTK-app testing.
 - **Per-user persistence** through Docker named volumes (`admin-home`, `ssh-host-keys`).
-- **Health supervision**: `session.sh` supervisa Xvfb/Cinnamon/x11vnc y los reinicia
-  si caen (hasta 20 veces), con logs en `session.log`.
+- **Health supervision**: `session.sh` supervises Xvfb/Cinnamon/x11vnc and restarts
+  whichever exits (up to 20 times), logging to `session.log`.
 
 ---
 
@@ -222,34 +222,33 @@ screenshot, click and type directly on the same desktop you see.
 Everything lives behind SSH (port `2222`) and a `make assistant` shortcut:
 
 ```bash
-# Desde el host
-make assistant ARGS="status"            # estado de la sesión y herramientas
-make assistant ARGS="shot /tmp/s.png"   # captura de pantalla (1920×1080)
-make assistant ARGS="ocr /tmp/s.png"    # leer texto de una captura (OCR)
-make assistant ARGS="open gnome-terminal"   # lanzar una app
-make assistant ARGS="run 'ls -la'"          # comando en la sesión gráfica
+# From the host
+make assistant ARGS="status"            # session and tools status
+make assistant ARGS="shot /tmp/s.png"   # real screenshot (1920×1080)
+make assistant ARGS="ocr /tmp/s.png"    # read text from a capture (OCR)
+make assistant ARGS="open gnome-terminal"  # launch an app
+make assistant ARGS="run 'ls -la'"         # run a command in the graphical session
 
-# Lo mismo por SSH
+# The same over SSH
 ssh admin@localhost -p 2222 'assistant shot /tmp/s.png'
 ```
 
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `assistant shot [out.png]` | Captura la pantalla completa por VNC |
-| `assistant region X Y W H [out]` | Captura una región |
-| `assistant ocr [png]` | OCR de una captura (tesseract, spa+eng) |
-| `assistant open <app>` / `run <cmd>` | Lanza apps/comandos en la sesión gráfica |
-| `assistant status` | Estado y herramientas disponibles |
-| `assistant wd run --app <cmd> --shot out.png` | **Control headless de apps GTK** (WayDriver): sesión Mutter aislada, **captura PNG real** y operación por AT-SPI |
+| `assistant shot [out.png]` | Captures the full screen (X11, real) |
+| `assistant region X Y W H [out]` | Captures a region |
+| `assistant ocr [png]` | OCR of a capture (tesseract, spa+eng) |
+| `assistant open <app>` / `run <cmd>` | Launches apps/commands in the graphical session |
+| `assistant status` | Session and tools status |
+| `assistant windows` / `winmove X Y` | Lists windows / moves a window reliably |
+| `assistant wd run --app <cmd> --shot out.png` | Isolated GTK-app testing (WayDriver): real PNG capture + AT-SPI control |
 
-**`assistant wd` (WayDriver) — ojos y manos reales:** como la captura del compositor headless
-es limitada, este contenedor integra **[WayDriver](https://waydriver.io)** para que la IA pruebe y
-controle **apps GTK4** (Helium, calculadora, tus apps Tauri) en una sesión `Mutter --headless`
-aislada, con **captura PNG real** (PipeWire mantiene el ScreenCast vivo → Mutter compone) e
-**input real** (RemoteDesktop) + AT-SPI:
+**`assistant wd` (WayDriver)** isolates GTK4 apps (Helium, calculator, your Tauri apps) in
+a `Mutter --headless` session, with **real PNG capture** (PipeWire keeps ScreenCast alive)
+and **real input** (RemoteDesktop) + AT-SPI:
 
 ```bash
-# Captura real de una app GTK + clic por XPath, todo por SSH
+# Real screenshot + XPath click, all over SSH
 ssh admin@localhost -p 2222 'assistant wd run --app gnome-calculator --click "//Button[@name=\"7\"]" --shot /tmp/calc.png'
 make assistant ARGS="wd run --app helium --shot /tmp/web.png --sleep 4"
 ```
@@ -276,8 +275,8 @@ same desktop you see. `assistant wd` adds isolated GTK-app testing via WayDriver
 │   ┌──────────────────────── Container: ubuntu-desktop ────────────────────────┐             │
 │   │                                                                          │             │
 │   │   Xvfb :1  ──►  Cinnamon (panel, Nemo, apps)                              │             │
-│   │   x11vnc  (VNC en :1, puerto 5900, -forever -shared) ◄── websockify/5900  │             │
-│   │   xdotool / import / scrot  (input + captura real para la IA)             │             │
+│   │   x11vnc  (VNC on :1, port 5900, -forever -shared) ◄── websockify/5900     │             │
+│   │   xdotool / import / scrot  (real AI input + capture)                      │             │
 │   │   dbus (system + session)                                                 │             │
 │   │   sshd (port 22)                                                          │             │
 │   │   Helium · Rust · Node.js · pnpm · yarn · tauri-cli                       │             │
@@ -436,10 +435,12 @@ docker compose exec ubuntu-desktop ss -ltn        # listening ports
 
 ## Roadmap
 
+- [x] Stable remote desktop in a container (Cinnamon X11 + x11vnc, no Wayland-headless).
+- [x] Real AI control over the desktop (`assistant`: capture, input, windows, OCR).
 - [ ] Multi-arch image (`linux/amd64` support for x86_64 hosts).
 - [ ] Optional `amd64` build matrix in CI.
 - [ ] Configurable virtual monitor size (currently 1920×1080).
-- [ ] Optional GPU acceleration (VA-API) documentation.
+- [ ] Live window-drag preview (needs a real GPU/display; compositors do not run on Xvfb+llvmpipe).
 - [ ] Automated smoke tests (noVNC HTTP check, VNC handshake, SSH).
 
 ---

@@ -437,10 +437,13 @@ docker compose exec ubuntu-desktop ss -ltn        # puertos a la escucha
 
 ## Hoja de ruta
 
+- [x] Escritorio remoto estable en contenedor (Cinnamon X11 + x11vnc, sin Wayland-headless).
+- [x] Control real de la IA sobre el escritorio (`assistant`: captura, input, ventanas, OCR).
 - [ ] Imagen multi-arquitectura (soporte `linux/amd64` para hosts x86_64).
 - [ ] Matriz opcional de compilación `amd64` en CI.
 - [ ] Tamaño de monitor virtual configurable (actualmente 1920×1080).
-- [ ] Documentación de aceleración por GPU (VA-API) opcional.
+- [ ] Vista previa en vivo al arrastrar ventanas (requiere GPU/pantalla real; ningún
+  compositor funciona en Xvfb+llvmpipe).
 - [ ] Pruebas de humo automatizadas (HTTP de noVNC, handshake VNC, SSH).
 
 ---
